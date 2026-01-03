@@ -1,0 +1,35 @@
+{
+  "name": "automated-assessment-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Automated Assessment and Feedback System",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/**/*.js",
+    "format": "prettier --write \"src/**/*.js\""
+  },
+  "keywords": ["assessment", "education", "ai", "feedback"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.1",
+    "multer": "^2.0.2",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-node": "^11.1.0",
+    "nodemon": "^3.1.11",
+    "prettier": "^3.7.4"
+  }
+}
