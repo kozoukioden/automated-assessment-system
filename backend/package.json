@@ -11,7 +11,12 @@
     "lint": "eslint src/**/*.js",
     "format": "prettier --write \"src/**/*.js\""
   },
-  "keywords": ["assessment", "education", "ai", "feedback"],
+  "keywords": [
+    "assessment",
+    "education",
+    "ai",
+    "feedback"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -22,8 +27,7 @@
     "express-validator": "^7.3.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
-    "multer": "^2.0.2",
-    "winston": "^3.19.0"
+    "multer": "^2.0.2"
   },
   "devDependencies": {
     "eslint": "^9.39.2",

@@ -1,50 +1,37 @@
-import winston from 'winston';
+// Simple logger compatible with Vercel serverless environment
+const isProduction = process.env.NODE_ENV === 'production';
+const isVercel = process.env.VERCEL === '1';
 
-const { combine, timestamp, printf, colorize, errors } = winston.format;
+// Simple logging functions
+const formatMessage = (level, message) => {
+  const timestamp = new Date().toISOString();
+  return `${timestamp} [${level}]: ${message}`;
+};
 
-// Define log format
-const logFormat = printf(({ level, message, timestamp, stack }) => {
-  return `${timestamp} [${level}]: ${stack || message}`;
-});
+export const logger = {
+  info: (message) => {
+    console.log(formatMessage('INFO', message));
+  },
 
-// Create logger instance
-export const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: combine(
-    errors({ stack: true }),
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    logFormat
-  ),
-  transports: [
-    // Console transport
-    new winston.transports.Console({
-      format: combine(colorize(), logFormat),
-    }),
-    // File transports
-    new winston.transports.File({
-      filename: 'logs/error.log',
-      level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-    new winston.transports.File({
-      filename: 'logs/combined.log',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-  ],
-  exceptionHandlers: [
-    new winston.transports.File({ filename: 'logs/exceptions.log' }),
-  ],
-  rejectionHandlers: [
-    new winston.transports.File({ filename: 'logs/rejections.log' }),
-  ],
-});
+  error: (message) => {
+    console.error(formatMessage('ERROR', message));
+  },
 
-// Create a stream object for Morgan HTTP logger
-logger.stream = {
-  write: (message) => {
-    logger.info(message.trim());
+  warn: (message) => {
+    console.warn(formatMessage('WARN', message));
+  },
+
+  debug: (message) => {
+    if (!isProduction) {
+      console.log(formatMessage('DEBUG', message));
+    }
+  },
+
+  // Stream object for Morgan HTTP logger
+  stream: {
+    write: (message) => {
+      console.log(formatMessage('INFO', message.trim()));
+    },
   },
 };
 
