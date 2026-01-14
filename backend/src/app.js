@@ -6,6 +6,7 @@ import { logger } from './utils/logger.js';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
+import activityRoutes from './routes/activityRoutes.js';
 import submissionRoutes from './routes/submissionRoutes.js';
 import evaluationRoutes from './routes/evaluationRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
@@ -48,6 +49,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/activities', activityRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/evaluations', evaluationRoutes);
 app.use('/api/progress', progressRoutes);
