@@ -10,9 +10,7 @@ import {
 } from '../controllers/rubricController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { isTeacherOrAdmin } from '../middleware/roleMiddleware.js';
-import { mongoIdValidation } from '../utils/validators.js';
-import { body } from 'express-validator';
-import { handleValidationErrors } from '../utils/validators.js';
+import { mongoIdValidation, rubricValidation, updateRubricValidation } from '../utils/validators.js';
 import { auditLog } from '../middleware/auditMiddleware.js';
 import { AUDIT_ACTIONS } from '../config/constants.js';
 
@@ -27,26 +25,7 @@ router.post(
   '/',
   authenticate,
   isTeacherOrAdmin,
-  [
-    body('name')
-      .notEmpty()
-      .withMessage('Rubric name is required')
-      .isLength({ min: 3, max: 200 })
-      .withMessage('Name must be between 3 and 200 characters'),
-    body('activityType')
-      .isIn(['speaking', 'writing', 'quiz', 'general'])
-      .withMessage('Invalid activity type'),
-    body('criteria')
-      .isArray({ min: 1 })
-      .withMessage('At least one criterion is required'),
-    body('criteria.*.name')
-      .notEmpty()
-      .withMessage('Criterion name is required'),
-    body('criteria.*.weight')
-      .isFloat({ min: 0, max: 1 })
-      .withMessage('Criterion weight must be between 0 and 1'),
-    handleValidationErrors,
-  ],
+  rubricValidation,
   auditLog(AUDIT_ACTIONS.CREATE, 'Rubric'),
   createRubric
 );
@@ -96,17 +75,7 @@ router.put(
   authenticate,
   isTeacherOrAdmin,
   mongoIdValidation,
-  [
-    body('name')
-      .optional()
-      .isLength({ min: 3, max: 200 })
-      .withMessage('Name must be between 3 and 200 characters'),
-    body('criteria')
-      .optional()
-      .isArray({ min: 1 })
-      .withMessage('At least one criterion is required'),
-    handleValidationErrors,
-  ],
+  updateRubricValidation,
   auditLog(AUDIT_ACTIONS.UPDATE, 'Rubric'),
   updateRubric
 );

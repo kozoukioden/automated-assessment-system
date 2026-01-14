@@ -180,6 +180,180 @@ export const paginationValidation = (req, res, next) => {
   next();
 };
 
+/**
+ * Refresh token validation middleware
+ */
+export const refreshTokenValidation = (req, res, next) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return validationError(res, [{ field: 'refreshToken', message: 'Refresh token is required' }]);
+  }
+
+  next();
+};
+
+/**
+ * Change password validation middleware
+ */
+export const changePasswordValidation = (req, res, next) => {
+  const errors = [];
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword) {
+    errors.push({ field: 'currentPassword', message: 'Current password is required' });
+  }
+
+  if (!newPassword || !isValidPassword(newPassword)) {
+    errors.push({
+      field: 'newPassword',
+      message: 'New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number',
+    });
+  }
+
+  if (errors.length > 0) {
+    return validationError(res, errors);
+  }
+
+  next();
+};
+
+/**
+ * Update user validation middleware
+ */
+export const updateUserValidation = (req, res, next) => {
+  const errors = [];
+  const { name, isActive, password } = req.body;
+
+  if (name && (name.length < 2 || name.length > 100)) {
+    errors.push({ field: 'name', message: 'Name must be between 2 and 100 characters' });
+  }
+
+  if (isActive !== undefined && typeof isActive !== 'boolean') {
+    errors.push({ field: 'isActive', message: 'isActive must be a boolean' });
+  }
+
+  if (password && password.length < 8) {
+    errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
+  }
+
+  if (errors.length > 0) {
+    return validationError(res, errors);
+  }
+
+  next();
+};
+
+/**
+ * Retrain model validation middleware
+ */
+export const retrainModelValidation = (req, res, next) => {
+  const { modelType } = req.body;
+
+  if (modelType && !['grammar', 'vocabulary', 'pronunciation', 'all'].includes(modelType)) {
+    return validationError(res, [{ field: 'modelType', message: 'Invalid model type' }]);
+  }
+
+  next();
+};
+
+/**
+ * Rubric validation middleware
+ */
+export const rubricValidation = (req, res, next) => {
+  const errors = [];
+  const { name, activityType, criteria } = req.body;
+
+  if (!name || name.length < 3 || name.length > 200) {
+    errors.push({ field: 'name', message: 'Name must be between 3 and 200 characters' });
+  }
+
+  if (!activityType || !['speaking', 'writing', 'quiz', 'general'].includes(activityType)) {
+    errors.push({ field: 'activityType', message: 'Invalid activity type' });
+  }
+
+  if (!criteria || !Array.isArray(criteria) || criteria.length < 1) {
+    errors.push({ field: 'criteria', message: 'At least one criterion is required' });
+  } else {
+    criteria.forEach((criterion, index) => {
+      if (!criterion.name) {
+        errors.push({ field: `criteria[${index}].name`, message: 'Criterion name is required' });
+      }
+      if (criterion.weight === undefined || typeof criterion.weight !== 'number' || criterion.weight < 0 || criterion.weight > 1) {
+        errors.push({ field: `criteria[${index}].weight`, message: 'Criterion weight must be between 0 and 1' });
+      }
+    });
+  }
+
+  if (errors.length > 0) {
+    return validationError(res, errors);
+  }
+
+  next();
+};
+
+/**
+ * Update rubric validation middleware
+ */
+export const updateRubricValidation = (req, res, next) => {
+  const errors = [];
+  const { name, criteria } = req.body;
+
+  if (name && (name.length < 3 || name.length > 200)) {
+    errors.push({ field: 'name', message: 'Name must be between 3 and 200 characters' });
+  }
+
+  if (criteria) {
+    if (!Array.isArray(criteria) || criteria.length < 1) {
+      errors.push({ field: 'criteria', message: 'At least one criterion is required' });
+    } else {
+      criteria.forEach((criterion, index) => {
+        if (criterion.weight !== undefined && (typeof criterion.weight !== 'number' || criterion.weight < 0 || criterion.weight > 1)) {
+          errors.push({ field: `criteria[${index}].weight`, message: 'Criterion weight must be between 0 and 1' });
+        }
+      });
+    }
+  }
+
+  if (errors.length > 0) {
+    return validationError(res, errors);
+  }
+
+  next();
+};
+
+/**
+ * Review evaluation validation middleware
+ */
+export const reviewEvaluationValidation = (req, res, next) => {
+  const errors = [];
+  const { overallScore, grammarScore, vocabularyScore, pronunciationScore, logicScore, teacherNotes } = req.body;
+
+  const scoreFields = [
+    { name: 'overallScore', value: overallScore },
+    { name: 'grammarScore', value: grammarScore },
+    { name: 'vocabularyScore', value: vocabularyScore },
+    { name: 'pronunciationScore', value: pronunciationScore },
+    { name: 'logicScore', value: logicScore },
+  ];
+
+  scoreFields.forEach(({ name, value }) => {
+    if (value !== undefined && (typeof value !== 'number' || value < 0 || value > 100)) {
+      errors.push({ field: name, message: `${name} must be between 0 and 100` });
+    }
+  });
+
+  if (teacherNotes !== undefined && typeof teacherNotes !== 'string') {
+    errors.push({ field: 'teacherNotes', message: 'Teacher notes must be a string' });
+  }
+
+  if (errors.length > 0) {
+    return validationError(res, errors);
+  }
+
+  next();
+};
+
 export default {
   registerValidation,
   loginValidation,
@@ -187,4 +361,11 @@ export default {
   activityValidation,
   mongoIdValidation,
   paginationValidation,
+  refreshTokenValidation,
+  changePasswordValidation,
+  updateUserValidation,
+  retrainModelValidation,
+  rubricValidation,
+  updateRubricValidation,
+  reviewEvaluationValidation,
 };

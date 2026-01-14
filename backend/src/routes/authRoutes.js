@@ -8,9 +8,12 @@ import {
   changePassword,
 } from '../controllers/authController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
-import { registerValidation, loginValidation } from '../utils/validators.js';
-import { body } from 'express-validator';
-import { handleValidationErrors } from '../utils/validators.js';
+import {
+  registerValidation,
+  loginValidation,
+  refreshTokenValidation,
+  changePasswordValidation,
+} from '../utils/validators.js';
 import { auditAuth } from '../middleware/auditMiddleware.js';
 import { AUDIT_ACTIONS } from '../config/constants.js';
 
@@ -42,16 +45,7 @@ router.post('/logout', authenticate, auditAuth(AUDIT_ACTIONS.LOGOUT), logout);
  * @desc    Refresh access token
  * @access  Public
  */
-router.post(
-  '/refresh',
-  [
-    body('refreshToken')
-      .notEmpty()
-      .withMessage('Refresh token is required'),
-    handleValidationErrors,
-  ],
-  refreshAccessToken
-);
+router.post('/refresh', refreshTokenValidation, refreshAccessToken);
 
 /**
  * @route   GET /api/auth/me
@@ -68,19 +62,7 @@ router.get('/me', authenticate, getCurrentUser);
 router.put(
   '/change-password',
   authenticate,
-  [
-    body('currentPassword')
-      .notEmpty()
-      .withMessage('Current password is required'),
-    body('newPassword')
-      .isLength({ min: 8 })
-      .withMessage('New password must be at least 8 characters long')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-      .withMessage(
-        'New password must contain at least one uppercase letter, one lowercase letter, and one number'
-      ),
-    handleValidationErrors,
-  ],
+  changePasswordValidation,
   auditAuth(AUDIT_ACTIONS.PASSWORD_CHANGE),
   changePassword
 );

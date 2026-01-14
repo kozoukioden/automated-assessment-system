@@ -17,9 +17,12 @@ import {
 } from '../controllers/adminController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { isAdmin } from '../middleware/roleMiddleware.js';
-import { registerValidation, mongoIdValidation } from '../utils/validators.js';
-import { body } from 'express-validator';
-import { handleValidationErrors } from '../utils/validators.js';
+import {
+  registerValidation,
+  mongoIdValidation,
+  updateUserValidation,
+  retrainModelValidation,
+} from '../utils/validators.js';
 import { auditLog } from '../middleware/auditMiddleware.js';
 import { AUDIT_ACTIONS } from '../config/constants.js';
 
@@ -51,21 +54,7 @@ router.get('/users/:id', mongoIdValidation, getUserById);
 router.put(
   '/users/:id',
   mongoIdValidation,
-  [
-    body('name')
-      .optional()
-      .isLength({ min: 2, max: 100 })
-      .withMessage('Name must be between 2 and 100 characters'),
-    body('isActive')
-      .optional()
-      .isBoolean()
-      .withMessage('isActive must be a boolean'),
-    body('password')
-      .optional()
-      .isLength({ min: 8 })
-      .withMessage('Password must be at least 8 characters long'),
-    handleValidationErrors,
-  ],
+  updateUserValidation,
   auditLog(AUDIT_ACTIONS.UPDATE, 'User'),
   updateUser
 );
@@ -117,13 +106,7 @@ router.get('/analytics/export', exportAnalytics);
 // Mock AI model retraining
 router.post(
   '/model/retrain',
-  [
-    body('modelType')
-      .optional()
-      .isIn(['grammar', 'vocabulary', 'pronunciation', 'all'])
-      .withMessage('Invalid model type'),
-    handleValidationErrors,
-  ],
+  retrainModelValidation,
   retrainModel
 );
 
