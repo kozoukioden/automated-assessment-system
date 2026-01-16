@@ -121,8 +121,38 @@ export const verifyRefreshToken = (token) => {
   }
 };
 
+/**
+ * Authorize user by role
+ */
+export const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
+        success: false,
+        message: `Access denied. Role '${req.user.role}' is not authorized.`,
+      });
+    }
+
+    next();
+  };
+};
+
+/**
+ * Alias for authenticate (protect)
+ */
+export const protect = authenticate;
+
 export default {
   authenticate,
+  protect,
+  authorize,
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
