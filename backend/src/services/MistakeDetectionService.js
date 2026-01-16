@@ -317,8 +317,8 @@ class MistakeDetectionService {
 
       const evaluationIds = await Promise.all(
         submissions.map(async (sub) => {
-          const eval = await Evaluation.findOne({ submissionId: sub._id });
-          return eval?._id;
+          const evaluation = await Evaluation.findOne({ submissionId: sub._id });
+          return evaluation?._id;
         })
       );
 
