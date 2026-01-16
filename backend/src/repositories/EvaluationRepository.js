@@ -46,7 +46,7 @@ class EvaluationRepository {
         });
 
       // Filter out evaluations where submission didn't match
-      return evaluations.filter(eval => eval.submissionId !== null);
+      return evaluations.filter(e => e.submissionId !== null);
     }
 
     return await Evaluation.find(query).sort({ evaluatedAt: -1 });
