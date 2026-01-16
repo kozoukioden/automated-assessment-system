@@ -52,8 +52,21 @@ const PendingReviews = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get('/submissions/pending');
-      setSubmissions(response.data?.submissions || []);
+      // Use the correct endpoint for pending reviews
+      const response = await api.get('/evaluations/pending-review');
+      const evaluations = response.data?.data?.evaluations || response.data?.evaluations || [];
+
+      // Map evaluations to submission-like format for the table
+      const mappedSubmissions = evaluations.map(evaluation => ({
+        _id: evaluation.submissionId?._id || evaluation._id,
+        student: evaluation.submissionId?.studentId || evaluation.studentId,
+        activity: evaluation.submissionId?.activityId || evaluation.activityId,
+        submittedAt: evaluation.submissionId?.createdAt || evaluation.createdAt,
+        aiScore: evaluation.overallScore,
+        evaluation: evaluation
+      }));
+
+      setSubmissions(mappedSubmissions);
     } catch (err) {
       console.error('Error fetching pending reviews:', err);
       setError(err.response?.data?.message || 'Failed to load pending reviews');

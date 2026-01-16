@@ -56,8 +56,10 @@ const RubricManagement = () => {
   const [expandedRubric, setExpandedRubric] = useState(null);
 
   useEffect(() => {
-    fetchRubrics();
-  }, []);
+    if (user?.id) {
+      fetchRubrics();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     filterRubrics();
@@ -68,8 +70,11 @@ const RubricManagement = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get(`/rubrics/teacher/${user._id}`);
-      setRubrics(response.data?.rubrics || []);
+      // Use the correct endpoint - /rubrics with optional createdBy filter
+      const response = await api.get('/rubrics', {
+        params: { createdBy: user?.id }
+      });
+      setRubrics(response.data?.data?.rubrics || response.data?.rubrics || []);
     } catch (err) {
       console.error('Error fetching rubrics:', err);
       setError(err.response?.data?.message || 'Failed to load rubrics');

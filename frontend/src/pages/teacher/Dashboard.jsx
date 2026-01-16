@@ -61,38 +61,42 @@ const Dashboard = () => {
   const [activityTypeData, setActivityTypeData] = useState([]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (user?.id) {
+      fetchDashboardData();
+    }
+  }, [user?.id]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch dashboard statistics
-      const [statsRes, submissionsRes, activitiesRes] = await Promise.all([
-        api.get('/teacher/dashboard/stats'),
-        api.get('/submissions/pending?limit=5'),
-        api.get('/activities/teacher/me'),
+      // Fetch dashboard data from correct endpoints
+      const [pendingRes, activitiesRes] = await Promise.all([
+        api.get('/evaluations/pending-review'),
+        api.get(`/activities/teacher/${user?.id}`),
       ]);
 
-      // Set statistics
+      // Get pending reviews for stats
+      const pendingReviews = pendingRes.data?.data?.evaluations || pendingRes.data?.evaluations || [];
+      const activities = activitiesRes.data?.data?.activities || activitiesRes.data?.activities || [];
+
+      // Set statistics (calculated from available data)
       setStats({
-        totalActivities: statsRes.data?.totalActivities || 0,
-        totalStudents: statsRes.data?.totalStudents || 0,
-        pendingReviews: statsRes.data?.pendingReviews || 0,
-        avgScore: statsRes.data?.avgScore || 0,
+        totalActivities: activities.length,
+        totalStudents: 0, // Not available from current endpoints
+        pendingReviews: pendingReviews.length,
+        avgScore: 0, // Not available from current endpoints
       });
 
-      // Set recent submissions
-      setRecentSubmissions(submissionsRes.data?.submissions || []);
+      // Set recent submissions (from pending reviews)
+      setRecentSubmissions(pendingReviews.slice(0, 5));
 
       // Generate submission trends data (last 7 days)
-      const trends = generateSubmissionTrends(submissionsRes.data?.submissions || []);
+      const trends = generateSubmissionTrends(pendingReviews);
       setSubmissionTrends(trends);
 
       // Generate activity type distribution
-      const activities = activitiesRes.data?.activities || [];
       const typeDistribution = generateActivityTypeData(activities);
       setActivityTypeData(typeDistribution);
 
