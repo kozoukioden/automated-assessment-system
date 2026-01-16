@@ -89,7 +89,21 @@ const RegisterPage = () => {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      // Try to get detailed error message
+      const errorData = err.response?.data;
+      let errorMessage = 'Registration failed. Please try again.';
+
+      if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
+
+      // If there are detailed validation errors, show them
+      if (errorData?.errors && errorData.errors.length > 0) {
+        const errorDetails = errorData.errors.map(e => e.message).join('. ');
+        errorMessage = errorDetails || errorMessage;
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -138,6 +152,7 @@ const RegisterPage = () => {
           select
           label="Role"
           margin="normal"
+          defaultValue={USER_ROLES.STUDENT}
           {...register('role')}
           error={!!errors.role}
           helperText={errors.role?.message}

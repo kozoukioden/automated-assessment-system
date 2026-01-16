@@ -28,8 +28,11 @@ const isValidMongoId = (id) => {
  * Create validation error response
  */
 const validationError = (res, errors) => {
+  // Create a user-friendly message from the first error
+  const message = errors.length > 0 ? errors[0].message : 'Validation failed';
   return res.status(HTTP_STATUS.BAD_REQUEST).json({
     success: false,
+    message: message,
     errors: errors,
   });
 };
