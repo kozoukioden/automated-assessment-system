@@ -67,6 +67,9 @@ export const getRubrics = asyncHandler(async (req, res) => {
   // Teachers can only see their own rubrics and templates
   if (req.user.role === USER_ROLES.TEACHER) {
     const teacher = await Teacher.findOne({ userId: req.user._id });
+    if (!teacher) {
+      throw new AppError('Teacher profile not found', HTTP_STATUS.NOT_FOUND);
+    }
     query.$or = [
       { createdBy: teacher._id },
       { isTemplate: true }

@@ -4,15 +4,16 @@ import Mistake from '../models/Mistake.js';
 import Submission from '../models/Submission.js';
 import FeedbackRepository from '../repositories/FeedbackRepository.js';
 import NotificationService from './NotificationService.js';
+import { geminiAIService } from './GeminiAIService.js';
 import { logger } from '../utils/logger.js';
 
 /**
  * Feedback Generation Service (FR8)
- * Generates personalized feedback based on evaluation results
+ * Uses Google Gemini AI to generate personalized feedback
  */
 class FeedbackGenerationService {
   /**
-   * Generate feedback for evaluation
+   * Generate feedback for evaluation using Gemini AI
    */
   async generateFeedback(evaluationId) {
     try {
@@ -25,18 +26,18 @@ class FeedbackGenerationService {
       const submission = evaluation.submissionId;
       const mistakes = await Mistake.find({ evaluationId });
 
-      // Generate feedback based on content type
+      // Generate feedback based on content type using Gemini
       let feedbackData;
 
       switch (submission.contentType) {
         case 'speaking':
-          feedbackData = this.generateSpeakingFeedback(evaluation, mistakes, submission);
+          feedbackData = await this.generateSpeakingFeedback(evaluation, mistakes, submission);
           break;
         case 'writing':
-          feedbackData = this.generateWritingFeedback(evaluation, mistakes, submission);
+          feedbackData = await this.generateWritingFeedback(evaluation, mistakes, submission);
           break;
         case 'quiz':
-          feedbackData = this.generateQuizFeedback(evaluation, mistakes, submission);
+          feedbackData = await this.generateQuizFeedback(evaluation, mistakes, submission);
           break;
         default:
           throw new Error(`Unknown content type: ${submission.contentType}`);
@@ -47,12 +48,13 @@ class FeedbackGenerationService {
         evaluationId: evaluation._id,
         ...feedbackData,
         generatedAt: new Date(),
+        aiGenerated: true,
       });
 
       // Send notification
       await NotificationService.notifyFeedbackReady(submission.studentId, feedback._id);
 
-      logger.info(`Feedback generated for evaluation ${evaluation.evaluationId}`);
+      logger.info(`Gemini AI feedback generated for evaluation ${evaluation.evaluationId}`);
 
       return feedback;
     } catch (error) {
@@ -62,9 +64,90 @@ class FeedbackGenerationService {
   }
 
   /**
-   * Generate speaking feedback
+   * Generate speaking feedback using Gemini AI
    */
-  generateSpeakingFeedback(evaluation, mistakes, submission) {
+  async generateSpeakingFeedback(evaluation, mistakes, submission) {
+    try {
+      // Use Gemini for feedback generation
+      const geminiFeedback = await geminiAIService.generateFeedback(
+        evaluation,
+        mistakes,
+        'speaking'
+      );
+
+      return {
+        feedbackText: geminiFeedback.feedbackText,
+        strengths: geminiFeedback.strengths,
+        improvements: geminiFeedback.improvements,
+        recommendations: geminiFeedback.recommendations,
+        isSummarized: false,
+        tone: geminiFeedback.tone,
+        aiGenerated: true,
+      };
+    } catch (error) {
+      logger.error(`Gemini speaking feedback failed: ${error.message}, using fallback`);
+      return this.fallbackGenerateSpeakingFeedback(evaluation, mistakes, submission);
+    }
+  }
+
+  /**
+   * Generate writing feedback using Gemini AI
+   */
+  async generateWritingFeedback(evaluation, mistakes, submission) {
+    try {
+      // Use Gemini for feedback generation
+      const geminiFeedback = await geminiAIService.generateFeedback(
+        evaluation,
+        mistakes,
+        'writing'
+      );
+
+      return {
+        feedbackText: geminiFeedback.feedbackText,
+        strengths: geminiFeedback.strengths,
+        improvements: geminiFeedback.improvements,
+        recommendations: geminiFeedback.recommendations,
+        isSummarized: false,
+        tone: geminiFeedback.tone,
+        aiGenerated: true,
+      };
+    } catch (error) {
+      logger.error(`Gemini writing feedback failed: ${error.message}, using fallback`);
+      return this.fallbackGenerateWritingFeedback(evaluation, mistakes, submission);
+    }
+  }
+
+  /**
+   * Generate quiz feedback using Gemini AI
+   */
+  async generateQuizFeedback(evaluation, mistakes, submission) {
+    try {
+      // Use Gemini for feedback generation
+      const geminiFeedback = await geminiAIService.generateFeedback(
+        evaluation,
+        mistakes,
+        'quiz'
+      );
+
+      return {
+        feedbackText: geminiFeedback.feedbackText,
+        strengths: geminiFeedback.strengths,
+        improvements: geminiFeedback.improvements,
+        recommendations: geminiFeedback.recommendations,
+        isSummarized: true,
+        tone: geminiFeedback.tone,
+        aiGenerated: true,
+      };
+    } catch (error) {
+      logger.error(`Gemini quiz feedback failed: ${error.message}, using fallback`);
+      return this.fallbackGenerateQuizFeedback(evaluation, mistakes, submission);
+    }
+  }
+
+  /**
+   * Fallback speaking feedback (rule-based)
+   */
+  fallbackGenerateSpeakingFeedback(evaluation, mistakes, submission) {
     const score = evaluation.overallScore;
     const pronunciation = evaluation.pronunciationScore;
     const vocabulary = evaluation.vocabularyScore;
@@ -74,14 +157,12 @@ class FeedbackGenerationService {
     const improvements = [];
     const recommendations = [];
 
-    // Analyze strengths
     if (pronunciation >= 80) strengths.push('Clear and accurate pronunciation');
     if (vocabulary >= 80) strengths.push('Rich and varied vocabulary usage');
     if (grammar >= 80) strengths.push('Strong grammatical accuracy');
     if (submission.content.duration >= 120)
       strengths.push('Good response length and detail');
 
-    // Analyze areas for improvement
     if (pronunciation < 70) {
       improvements.push('Pronunciation clarity needs attention');
       recommendations.push('Practice pronunciation with native speaker recordings');
@@ -95,14 +176,12 @@ class FeedbackGenerationService {
       recommendations.push('Review fundamental grammar rules and practice');
     }
 
-    // Add mistake-specific improvements
     const pronunciationErrors = mistakes.filter((m) => m.errorType === 'pronunciation');
     if (pronunciationErrors.length > 0) {
       const uniqueIssues = [...new Set(pronunciationErrors.map((m) => m.description))];
       improvements.push(...uniqueIssues.slice(0, 2));
     }
 
-    // Generate main feedback text
     const feedbackText = this.generateFeedbackText(score, {
       type: 'speaking',
       strengths,
@@ -116,14 +195,14 @@ class FeedbackGenerationService {
       improvements,
       recommendations,
       isSummarized: false,
-      tone: score >= 80 ? 'encouraging' : score >= 60 ? 'constructive' : 'constructive',
+      tone: score >= 80 ? 'encouraging' : 'constructive',
     };
   }
 
   /**
-   * Generate writing feedback
+   * Fallback writing feedback (rule-based)
    */
-  generateWritingFeedback(evaluation, mistakes, submission) {
+  fallbackGenerateWritingFeedback(evaluation, mistakes, submission) {
     const score = evaluation.overallScore;
     const grammar = evaluation.grammarScore;
     const vocabulary = evaluation.vocabularyScore;
@@ -133,14 +212,12 @@ class FeedbackGenerationService {
     const improvements = [];
     const recommendations = [];
 
-    // Analyze strengths
     if (grammar >= 80) strengths.push('Excellent grammar and sentence structure');
     if (vocabulary >= 80) strengths.push('Sophisticated vocabulary choices');
     if (structure >= 80) strengths.push('Well-organized and coherent writing');
     if (submission.content.wordCount >= 200)
       strengths.push('Comprehensive response with good detail');
 
-    // Analyze areas for improvement
     const grammarErrors = mistakes.filter((m) => m.errorType === 'grammar');
     const spellingErrors = mistakes.filter((m) => m.errorType === 'spelling');
     const vocabularyIssues = mistakes.filter((m) => m.errorType === 'vocabulary');
@@ -165,7 +242,6 @@ class FeedbackGenerationService {
       recommendations.push('Develop ideas more fully with examples and explanations');
     }
 
-    // Generate main feedback text
     const feedbackText = this.generateFeedbackText(score, {
       type: 'writing',
       strengths,
@@ -188,9 +264,9 @@ class FeedbackGenerationService {
   }
 
   /**
-   * Generate quiz feedback
+   * Fallback quiz feedback (rule-based)
    */
-  generateQuizFeedback(evaluation, mistakes, submission) {
+  fallbackGenerateQuizFeedback(evaluation, mistakes, submission) {
     const score = evaluation.overallScore;
     const breakdown = evaluation.scoreBreakdown;
     const correctAnswers = breakdown.correctAnswers || 0;
@@ -201,7 +277,6 @@ class FeedbackGenerationService {
     const improvements = [];
     const recommendations = [];
 
-    // Analyze performance
     if (score >= 90) {
       strengths.push('Excellent overall performance');
       strengths.push('Strong understanding of concepts');
@@ -215,7 +290,6 @@ class FeedbackGenerationService {
       strengths.push(`Correctly answered ${correctAnswers} out of ${totalQuestions} questions`);
     }
 
-    // Areas for improvement
     if (incorrectCount > 0) {
       improvements.push(`${incorrectCount} incorrect ${incorrectCount === 1 ? 'answer' : 'answers'}`);
 
@@ -230,7 +304,6 @@ class FeedbackGenerationService {
       }
     }
 
-    // Generate main feedback text
     const feedbackText = this.generateQuizFeedbackText(score, {
       correctAnswers,
       totalQuestions,
@@ -245,19 +318,18 @@ class FeedbackGenerationService {
       improvements,
       recommendations,
       isSummarized: true,
-      tone: score >= 80 ? 'encouraging' : score >= 60 ? 'constructive' : 'constructive',
+      tone: score >= 80 ? 'encouraging' : 'constructive',
     };
   }
 
   /**
-   * Generate feedback text
+   * Generate feedback text (fallback)
    */
   generateFeedbackText(score, details) {
     const { type, strengths, improvements, scores } = details;
 
     let text = '';
 
-    // Opening based on score
     if (score >= 90) {
       text += 'Outstanding work! ';
     } else if (score >= 80) {
@@ -272,7 +344,6 @@ class FeedbackGenerationService {
 
     text += `Your overall score is ${score}/100. `;
 
-    // Strengths
     if (strengths.length > 0) {
       text += '\n\nStrengths:\n';
       strengths.forEach((strength) => {
@@ -280,7 +351,6 @@ class FeedbackGenerationService {
       });
     }
 
-    // Areas for improvement
     if (improvements.length > 0) {
       text += '\n\nAreas for Improvement:\n';
       improvements.forEach((improvement) => {
@@ -288,7 +358,6 @@ class FeedbackGenerationService {
       });
     }
 
-    // Score breakdown for speaking/writing
     if (type === 'speaking') {
       text += '\n\nScore Breakdown:\n';
       text += `• Pronunciation: ${scores.pronunciation}/100\n`;
@@ -313,7 +382,7 @@ class FeedbackGenerationService {
   }
 
   /**
-   * Generate quiz feedback text
+   * Generate quiz feedback text (fallback)
    */
   generateQuizFeedbackText(score, details) {
     const { correctAnswers, totalQuestions, incorrectCount } = details;
@@ -352,7 +421,7 @@ class FeedbackGenerationService {
   }
 
   /**
-   * Summarize existing feedback
+   * Summarize existing feedback using Gemini AI
    */
   async summarizeFeedback(feedbackId) {
     const feedback = await Feedback.findById(feedbackId);
@@ -365,21 +434,42 @@ class FeedbackGenerationService {
       return feedback;
     }
 
-    // Create shorter summary
-    const summary = this.createSummary(feedback.feedbackText, feedback.strengths, feedback.improvements);
+    try {
+      // Use Gemini for summarization
+      const prompt = `Summarize this feedback in 2-3 sentences, keeping the key strengths and areas for improvement:
 
-    feedback.feedbackText = summary;
-    feedback.isSummarized = true;
+${feedback.feedbackText}
 
-    await feedback.save();
+Return ONLY the summary text, no JSON.`;
 
-    logger.info(`Feedback summarized: ${feedback.feedbackId}`);
+      const result = await geminiAIService.model.generateContent(prompt);
+      const summary = result.response.text().trim();
 
-    return feedback;
+      feedback.feedbackText = summary;
+      feedback.isSummarized = true;
+
+      await feedback.save();
+
+      logger.info(`Feedback summarized with Gemini: ${feedback.feedbackId}`);
+
+      return feedback;
+    } catch (error) {
+      logger.error(`Gemini summarization failed: ${error.message}, using fallback`);
+
+      // Fallback to rule-based summary
+      const summary = this.createSummary(feedback.feedbackText, feedback.strengths, feedback.improvements);
+
+      feedback.feedbackText = summary;
+      feedback.isSummarized = true;
+
+      await feedback.save();
+
+      return feedback;
+    }
   }
 
   /**
-   * Create feedback summary
+   * Create feedback summary (fallback)
    */
   createSummary(fullText, strengths, improvements) {
     let summary = '';

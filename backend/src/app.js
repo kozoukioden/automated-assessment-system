@@ -12,6 +12,7 @@ import evaluationRoutes from './routes/evaluationRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import rubricRoutes from './routes/rubricRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import teacherRoutes from './routes/teacherRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +56,7 @@ app.use('/api/evaluations', evaluationRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/rubrics', rubricRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/teacher', teacherRoutes);
 
 // API Documentation route
 app.get('/api', (req, res) => {
@@ -72,6 +74,7 @@ app.get('/api', (req, res) => {
       rubrics: '/api/rubrics',
       notifications: '/api/notifications',
       admin: '/api/admin',
+      teacher: '/api/teacher',
     },
   });
 });

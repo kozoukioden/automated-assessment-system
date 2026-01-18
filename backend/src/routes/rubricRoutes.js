@@ -52,6 +52,13 @@ router.post(
 );
 
 /**
+ * @route   GET /api/rubrics/teacher/me
+ * @desc    Get current teacher's rubrics
+ * @access  Private (Teacher, Admin)
+ */
+router.get('/teacher/me', authenticate, isTeacherOrAdmin, getRubrics);
+
+/**
  * @route   GET /api/rubrics
  * @desc    Get all rubrics with filters
  * @access  Private
