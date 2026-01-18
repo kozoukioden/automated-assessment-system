@@ -38,6 +38,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Root route (for Render health checks)
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Automated Assessment System API',
+    version: '1.0.0',
+  });
+});
+
 // Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({

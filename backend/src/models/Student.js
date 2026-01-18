@@ -43,7 +43,8 @@ studentSchema.index({ userId: 1 });
 studentSchema.index({ studentId: 1 });
 
 // Auto-generate student ID if not provided
-studentSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+studentSchema.pre('validate', async function (next) {
   if (!this.studentId) {
     const count = await mongoose.model('Student').countDocuments();
     this.studentId = `STU${String(count + 1).padStart(6, '0')}`;

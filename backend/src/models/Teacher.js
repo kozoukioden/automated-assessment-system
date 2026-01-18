@@ -35,7 +35,9 @@ teacherSchema.index({ userId: 1 });
 teacherSchema.index({ teacherId: 1 });
 
 // Auto-generate teacher ID if not provided
-teacherSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+// and would fail on required check before save hook can generate the ID
+teacherSchema.pre('validate', async function (next) {
   if (!this.teacherId) {
     const count = await mongoose.model('Teacher').countDocuments();
     this.teacherId = `TCH${String(count + 1).padStart(6, '0')}`;
