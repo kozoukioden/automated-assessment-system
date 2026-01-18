@@ -44,9 +44,9 @@ export const register = asyncHandler(async (req, res) => {
       userId: user._id,
     });
   } else if (role === USER_ROLES.TEACHER) {
-    await Teacher.create({
-      userId: user._id,
-    });
+    // Use new + save() to trigger pre-save hook for auto-generating teacherId
+    const teacher = new Teacher({ userId: user._id });
+    await teacher.save();
   }
 
   // Generate tokens

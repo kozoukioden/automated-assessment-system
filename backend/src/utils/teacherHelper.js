@@ -14,8 +14,11 @@ export const getOrCreateTeacherProfile = async (userId) => {
 
   if (!teacher) {
     // Auto-create Teacher profile for existing teacher users
-    teacher = await Teacher.create({ userId });
-    logger.info(`Auto-created Teacher profile for userId: ${userId}`);
+    // Use new + save() instead of create() to trigger pre-save hook
+    // which auto-generates the teacherId field
+    teacher = new Teacher({ userId });
+    await teacher.save();
+    logger.info(`Auto-created Teacher profile for userId: ${userId}, teacherId: ${teacher.teacherId}`);
   }
 
   return teacher;
