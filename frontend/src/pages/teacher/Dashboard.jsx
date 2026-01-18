@@ -74,7 +74,7 @@ const Dashboard = () => {
       // Fetch dashboard data from correct endpoints
       const [pendingRes, activitiesRes] = await Promise.all([
         api.get('/evaluations/pending-review'),
-        api.get(`/activities/teacher/${user?.id}`),
+        api.get('/activities/teacher/me'),
       ]);
 
       // Get pending reviews for stats

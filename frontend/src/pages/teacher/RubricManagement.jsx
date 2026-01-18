@@ -70,10 +70,8 @@ const RubricManagement = () => {
       setLoading(true);
       setError(null);
 
-      // Use the correct endpoint - /rubrics with optional createdBy filter
-      const response = await api.get('/rubrics', {
-        params: { createdBy: user?.id }
-      });
+      // Use the correct endpoint - /rubrics/teacher/me which auto-filters by teacher
+      const response = await api.get('/rubrics/teacher/me');
       setRubrics(response.data?.data?.rubrics || response.data?.rubrics || []);
     } catch (err) {
       console.error('Error fetching rubrics:', err);
@@ -97,7 +95,7 @@ const RubricManagement = () => {
 
     // Filter by type
     if (filterType !== 'all') {
-      filtered = filtered.filter((rubric) => rubric.type === filterType);
+      filtered = filtered.filter((rubric) => rubric.activityType === filterType);
     }
 
     setFilteredRubrics(filtered);
@@ -164,7 +162,7 @@ const RubricManagement = () => {
       minWidth: 200,
     },
     {
-      id: 'type',
+      id: 'activityType',
       label: 'Type',
       align: 'center',
       format: (value) => (
@@ -189,12 +187,12 @@ const RubricManagement = () => {
       format: (value) => value?.length || 0,
     },
     {
-      id: 'maxScore',
-      label: 'Max Score',
+      id: 'totalWeight',
+      label: 'Total Weight',
       align: 'center',
       format: (value, row) => {
-        const total = row.criteria?.reduce((sum, c) => sum + (c.maxScore || 0), 0) || 0;
-        return total;
+        const total = row.criteria?.reduce((sum, c) => sum + (c.weight || 0), 0) || 0;
+        return `${(total * 100).toFixed(0)}%`;
       },
     },
     {
@@ -322,7 +320,7 @@ const RubricManagement = () => {
                           <Typography variant="subtitle1" fontWeight="bold">
                             {criterion.name}
                           </Typography>
-                          <Chip label={`${criterion.maxScore} pts`} size="small" color="primary" />
+                          <Chip label={`${((criterion.weight || 0) * 100).toFixed(0)}%`} size="small" color="primary" />
                         </Box>
                       }
                       secondary={criterion.description}

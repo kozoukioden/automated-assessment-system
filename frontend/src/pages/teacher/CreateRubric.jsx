@@ -9,6 +9,7 @@ import {
   IconButton,
   Paper,
   Divider,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,20 +28,20 @@ import ErrorMessage from '../../components/common/UI/ErrorMessage';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 
-// Validation schema
+// Validation schema - matches backend Rubric model
 const rubricSchema = yup.object({
   name: yup.string().required('Rubric name is required').min(3, 'Name must be at least 3 characters'),
   description: yup.string(),
-  type: yup.string().oneOf(['speaking', 'writing', 'quiz'], 'Invalid rubric type').required('Type is required'),
+  activityType: yup.string().oneOf(['speaking', 'writing', 'quiz'], 'Invalid rubric type').required('Type is required'),
   criteria: yup.array()
     .of(
       yup.object({
         name: yup.string().required('Criterion name is required'),
         description: yup.string().required('Criterion description is required'),
-        maxScore: yup.number()
-          .positive('Max score must be positive')
-          .required('Max score is required')
-          .min(1, 'Max score must be at least 1'),
+        weight: yup.number()
+          .required('Weight is required')
+          .min(0.01, 'Weight must be at least 0.01')
+          .max(1, 'Weight cannot exceed 1'),
       })
     )
     .min(1, 'At least one criterion is required'),
@@ -63,18 +64,19 @@ const CreateRubric = () => {
     control,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(rubricSchema),
     defaultValues: {
       name: '',
       description: '',
-      type: 'speaking',
+      activityType: 'speaking',
       criteria: [
         {
           name: '',
           description: '',
-          maxScore: 10,
+          weight: 1.0,
         },
       ],
     },
@@ -84,6 +86,8 @@ const CreateRubric = () => {
     control,
     name: 'criteria',
   });
+
+  const watchCriteria = watch('criteria');
 
   useEffect(() => {
     if (isEditMode) {
@@ -97,12 +101,12 @@ const CreateRubric = () => {
       setError(null);
 
       const response = await api.get(`/rubrics/${id}`);
-      const rubric = response.data?.rubric;
+      const rubric = response.data?.data?.rubric || response.data?.rubric;
 
       if (rubric) {
         setValue('name', rubric.name);
         setValue('description', rubric.description || '');
-        setValue('type', rubric.type);
+        setValue('activityType', rubric.activityType);
         setValue('criteria', rubric.criteria || []);
       }
     } catch (err) {
@@ -116,6 +120,14 @@ const CreateRubric = () => {
   const onSubmit = async (data) => {
     try {
       setSubmitting(true);
+
+      // Validate weights sum to 1.0
+      const totalWeight = data.criteria.reduce((sum, c) => sum + Number(c.weight), 0);
+      if (Math.abs(totalWeight - 1.0) > 0.01) {
+        toast.error('Criteria weights must sum to 1.0 (100%)');
+        setSubmitting(false);
+        return;
+      }
 
       if (isEditMode) {
         await api.put(`/rubrics/${id}`, data);
@@ -134,11 +146,26 @@ const CreateRubric = () => {
     }
   };
 
-  const calculateTotalScore = () => {
-    return fields.reduce((sum, field, index) => {
-      const value = control._formValues.criteria?.[index]?.maxScore || 0;
-      return sum + Number(value);
-    }, 0);
+  const calculateTotalWeight = () => {
+    if (!watchCriteria) return 0;
+    return watchCriteria.reduce((sum, c) => sum + Number(c?.weight || 0), 0);
+  };
+
+  const totalWeight = calculateTotalWeight();
+  const isWeightValid = Math.abs(totalWeight - 1.0) <= 0.01;
+
+  // Auto-distribute weights equally
+  const distributeWeightsEqually = () => {
+    const count = fields.length;
+    if (count === 0) return;
+    const equalWeight = Number((1 / count).toFixed(2));
+    const remainder = Number((1 - equalWeight * count).toFixed(2));
+
+    fields.forEach((_, index) => {
+      // Add remainder to last item to ensure sum is exactly 1.0
+      const weight = index === count - 1 ? equalWeight + remainder : equalWeight;
+      setValue(`criteria.${index}.weight`, Number(weight.toFixed(2)));
+    });
   };
 
   if (loading) {
@@ -204,7 +231,7 @@ const CreateRubric = () => {
 
             <Grid item xs={12} md={6}>
               <Controller
-                name="type"
+                name="activityType"
                 control={control}
                 render={({ field }) => (
                   <TextField
@@ -213,8 +240,8 @@ const CreateRubric = () => {
                     label="Activity Type"
                     fullWidth
                     required
-                    error={!!errors.type}
-                    helperText={errors.type?.message || 'Select the type of activity this rubric is for'}
+                    error={!!errors.activityType}
+                    helperText={errors.activityType?.message || 'Select the type of activity this rubric is for'}
                   >
                     <MenuItem value="speaking">Speaking</MenuItem>
                     <MenuItem value="writing">Writing</MenuItem>
@@ -249,12 +276,24 @@ const CreateRubric = () => {
           <Box sx={{ mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
               Define the criteria that will be used to evaluate student submissions. Each criterion should
-              have a clear name, description, and maximum score.
+              have a clear name, description, and weight. Weights must sum to 1.0 (100%).
             </Typography>
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              Total Points: <strong>{calculateTotalScore()}</strong>
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+              <Typography variant="h6" color={isWeightValid ? 'success.main' : 'error.main'}>
+                Total Weight: <strong>{(totalWeight * 100).toFixed(0)}%</strong>
+                {!isWeightValid && ' (Must equal 100%)'}
+              </Typography>
+              <Button size="small" onClick={distributeWeightsEqually}>
+                Distribute Equally
+              </Button>
+            </Box>
           </Box>
+
+          {!isWeightValid && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Criteria weights must sum to 100%. Current total: {(totalWeight * 100).toFixed(0)}%
+            </Alert>
+          )}
 
           <Divider sx={{ mb: 3 }} />
 
@@ -304,18 +343,19 @@ const CreateRubric = () => {
 
                 <Grid item xs={12} md={4}>
                   <Controller
-                    name={`criteria.${index}.maxScore`}
+                    name={`criteria.${index}.weight`}
                     control={control}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        label="Max Score"
+                        label="Weight (0-1)"
                         type="number"
                         fullWidth
                         required
-                        error={!!errors.criteria?.[index]?.maxScore}
-                        helperText={errors.criteria?.[index]?.maxScore?.message}
-                        inputProps={{ min: 1, step: 1 }}
+                        error={!!errors.criteria?.[index]?.weight}
+                        helperText={errors.criteria?.[index]?.weight?.message || `${((Number(field.value) || 0) * 100).toFixed(0)}%`}
+                        inputProps={{ min: 0.01, max: 1, step: 0.01 }}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
                       />
                     )}
                   />
@@ -353,7 +393,7 @@ const CreateRubric = () => {
               append({
                 name: '',
                 description: '',
-                maxScore: 10,
+                weight: 0.1,
               })
             }
             variant="outlined"
@@ -382,7 +422,7 @@ const CreateRubric = () => {
             type="submit"
             variant="contained"
             startIcon={<SaveIcon />}
-            disabled={submitting}
+            disabled={submitting || !isWeightValid}
           >
             {submitting ? 'Saving...' : isEditMode ? 'Update Rubric' : 'Create Rubric'}
           </Button>
