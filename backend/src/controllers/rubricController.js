@@ -4,6 +4,7 @@ import { HTTP_STATUS, USER_ROLES } from '../config/constants.js';
 import { asyncHandler, formatSuccessResponse } from '../utils/helpers.js';
 import { AppError } from '../middleware/errorMiddleware.js';
 import { logger } from '../utils/logger.js';
+import { getOrCreateTeacherProfile } from '../utils/teacherHelper.js';
 
 /**
  * @desc    Create rubric (FR12)
@@ -13,12 +14,10 @@ import { logger } from '../utils/logger.js';
 export const createRubric = asyncHandler(async (req, res) => {
   const { name, activityType, criteria, isTemplate } = req.body;
 
-  // Get teacher profile
-  const teacher = await Teacher.findOne({ userId: req.user._id });
-
-  if (!teacher && req.user.role !== USER_ROLES.ADMIN) {
-    throw new AppError('Teacher profile not found', HTTP_STATUS.NOT_FOUND);
-  }
+  // Get or create teacher profile
+  const teacher = req.user.role === USER_ROLES.TEACHER
+    ? await getOrCreateTeacherProfile(req.user._id)
+    : null;
 
   // Validate criteria weights sum to 1.0
   const totalWeight = criteria.reduce((sum, criterion) => sum + criterion.weight, 0);
@@ -66,10 +65,7 @@ export const getRubrics = asyncHandler(async (req, res) => {
 
   // Teachers can only see their own rubrics and templates
   if (req.user.role === USER_ROLES.TEACHER) {
-    const teacher = await Teacher.findOne({ userId: req.user._id });
-    if (!teacher) {
-      throw new AppError('Teacher profile not found', HTTP_STATUS.NOT_FOUND);
-    }
+    const teacher = await getOrCreateTeacherProfile(req.user._id);
     query.$or = [
       { createdBy: teacher._id },
       { isTemplate: true }
@@ -134,8 +130,8 @@ export const updateRubric = asyncHandler(async (req, res) => {
 
   // Permission check: Teacher can only update their own
   if (req.user.role === USER_ROLES.TEACHER) {
-    const teacher = await Teacher.findOne({ userId: req.user._id });
-    if (!teacher || rubric.createdBy.toString() !== teacher._id.toString()) {
+    const teacher = await getOrCreateTeacherProfile(req.user._id);
+    if (rubric.createdBy.toString() !== teacher._id.toString()) {
       throw new AppError('You can only update your own rubrics', HTTP_STATUS.FORBIDDEN);
     }
   }
@@ -179,8 +175,8 @@ export const deleteRubric = asyncHandler(async (req, res) => {
 
   // Permission check: Teacher can only delete their own
   if (req.user.role === USER_ROLES.TEACHER) {
-    const teacher = await Teacher.findOne({ userId: req.user._id });
-    if (!teacher || rubric.createdBy.toString() !== teacher._id.toString()) {
+    const teacher = await getOrCreateTeacherProfile(req.user._id);
+    if (rubric.createdBy.toString() !== teacher._id.toString()) {
       throw new AppError('You can only delete your own rubrics', HTTP_STATUS.FORBIDDEN);
     }
   }
@@ -233,12 +229,10 @@ export const duplicateRubric = asyncHandler(async (req, res) => {
     throw new AppError('Rubric not found', HTTP_STATUS.NOT_FOUND);
   }
 
-  // Get teacher profile
-  const teacher = await Teacher.findOne({ userId: req.user._id });
-
-  if (!teacher && req.user.role !== USER_ROLES.ADMIN) {
-    throw new AppError('Teacher profile not found', HTTP_STATUS.NOT_FOUND);
-  }
+  // Get or create teacher profile
+  const teacher = req.user.role !== USER_ROLES.ADMIN
+    ? await getOrCreateTeacherProfile(req.user._id)
+    : null;
 
   // Create duplicate
   const duplicateRubric = await Rubric.create({

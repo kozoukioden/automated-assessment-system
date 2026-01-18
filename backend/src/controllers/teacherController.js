@@ -7,6 +7,7 @@ import Evaluation from '../models/Evaluation.js';
 import { HTTP_STATUS } from '../config/constants.js';
 import { asyncHandler, formatSuccessResponse } from '../utils/helpers.js';
 import { AppError } from '../middleware/errorMiddleware.js';
+import { getOrCreateTeacherProfile } from '../utils/teacherHelper.js';
 
 /**
  * @desc    Get current teacher profile
@@ -14,12 +15,8 @@ import { AppError } from '../middleware/errorMiddleware.js';
  * @access  Private (Teacher)
  */
 export const getTeacherProfile = asyncHandler(async (req, res) => {
-  const teacher = await Teacher.findOne({ userId: req.user._id })
-    .populate('userId', 'email name role');
-
-  if (!teacher) {
-    throw new AppError('Teacher profile not found', HTTP_STATUS.NOT_FOUND);
-  }
+  const teacher = await getOrCreateTeacherProfile(req.user._id);
+  await teacher.populate('userId', 'email name role');
 
   res.status(HTTP_STATUS.OK).json(
     formatSuccessResponse(
@@ -35,11 +32,7 @@ export const getTeacherProfile = asyncHandler(async (req, res) => {
  * @access  Private (Teacher)
  */
 export const getTeacherStudents = asyncHandler(async (req, res) => {
-  const teacher = await Teacher.findOne({ userId: req.user._id });
-
-  if (!teacher) {
-    throw new AppError('Teacher profile not found', HTTP_STATUS.NOT_FOUND);
-  }
+  const teacher = await getOrCreateTeacherProfile(req.user._id);
 
   // Get all activities by this teacher
   const activities = await Activity.find({ createdBy: teacher._id });
@@ -89,11 +82,7 @@ export const getTeacherStudents = asyncHandler(async (req, res) => {
 export const getTeacherAnalytics = asyncHandler(async (req, res) => {
   const { timeRange = 30 } = req.query;
 
-  const teacher = await Teacher.findOne({ userId: req.user._id });
-
-  if (!teacher) {
-    throw new AppError('Teacher profile not found', HTTP_STATUS.NOT_FOUND);
-  }
+  const teacher = await getOrCreateTeacherProfile(req.user._id);
 
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - parseInt(timeRange));

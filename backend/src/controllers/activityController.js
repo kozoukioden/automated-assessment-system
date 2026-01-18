@@ -1,20 +1,26 @@
 import Activity from '../models/Activity.js';
 import { logger } from '../utils/logger.js';
+import { getOrCreateTeacherProfile } from '../utils/teacherHelper.js';
 
 // @desc    Create new activity
 // @route   POST /api/activities
 // @access  Private/Teacher
 export const createActivity = async (req, res, next) => {
   try {
+    // Get or create teacher profile - createdBy expects Teacher._id, not User._id
+    const teacher = await getOrCreateTeacherProfile(req.user._id);
+
     const activityData = {
       ...req.body,
-      createdBy: req.user._id,
-      activityId: `ACT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdBy: teacher._id,
     };
+
+    // Remove activityId if provided - model pre-save hook will generate it
+    delete activityData.activityId;
 
     const activity = await Activity.create(activityData);
 
-    logger.info(`Activity created: ${activity._id} by user: ${req.user._id}`);
+    logger.info(`Activity created: ${activity._id} by teacher: ${teacher._id}`);
 
     res.status(201).json({
       success: true,
@@ -96,11 +102,14 @@ export const updateActivity = async (req, res, next) => {
     }
 
     // Check if user is the creator or admin
-    if (activity.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this activity',
-      });
+    if (req.user.role !== 'admin') {
+      const teacher = await getOrCreateTeacherProfile(req.user._id);
+      if (activity.createdBy.toString() !== teacher._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to update this activity',
+        });
+      }
     }
 
     activity = await Activity.findByIdAndUpdate(req.params.id, req.body, {
@@ -138,11 +147,14 @@ export const deleteActivity = async (req, res, next) => {
     }
 
     // Check if user is the creator or admin
-    if (activity.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this activity',
-      });
+    if (req.user.role !== 'admin') {
+      const teacher = await getOrCreateTeacherProfile(req.user._id);
+      if (activity.createdBy.toString() !== teacher._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to delete this activity',
+        });
+      }
     }
 
     await Activity.findByIdAndDelete(req.params.id);
@@ -165,15 +177,20 @@ export const deleteActivity = async (req, res, next) => {
 // @access  Private/Teacher
 export const getTeacherActivities = async (req, res, next) => {
   try {
+    const teacherId = req.params.teacherId;
+
     // Allow teacher to see own activities or admin to see any teacher's activities
-    if (req.user._id.toString() !== req.params.teacherId && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to view these activities',
-      });
+    if (req.user.role !== 'admin') {
+      const teacher = await getOrCreateTeacherProfile(req.user._id);
+      if (teacher._id.toString() !== teacherId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to view these activities',
+        });
+      }
     }
 
-    const activities = await Activity.find({ createdBy: req.params.teacherId })
+    const activities = await Activity.find({ createdBy: teacherId })
       .populate('rubricId')
       .sort({ createdAt: -1 });
 

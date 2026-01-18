@@ -8,8 +8,7 @@ import {
   getTeacherActivities,
 } from '../controllers/activityController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
-import Teacher from '../models/Teacher.js';
-import { HTTP_STATUS } from '../config/constants.js';
+import { getOrCreateTeacherProfile } from '../utils/teacherHelper.js';
 
 const router = express.Router();
 
@@ -19,13 +18,7 @@ router.get('/', protect, getAllActivities);
 // Teacher's own activities (MUST be before /:id to avoid conflict)
 router.get('/teacher/me', protect, authorize('teacher', 'admin'), async (req, res, next) => {
   try {
-    const teacher = await Teacher.findOne({ userId: req.user._id });
-    if (!teacher) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
-        success: false,
-        message: 'Teacher profile not found'
-      });
-    }
+    const teacher = await getOrCreateTeacherProfile(req.user._id);
     // Set teacherId param and forward to getTeacherActivities
     req.params.teacherId = teacher._id.toString();
     next();
