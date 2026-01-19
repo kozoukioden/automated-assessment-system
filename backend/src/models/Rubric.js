@@ -81,7 +81,18 @@ rubricSchema.index({ activityType: 1 });
 rubricSchema.index({ createdBy: 1 });
 rubricSchema.index({ isTemplate: 1 });
 
-// Validate that weights sum to 1
+// Auto-generate rubric ID if not provided
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+// and would fail on required check before save hook can generate the ID
+rubricSchema.pre('validate', async function (next) {
+  if (!this.rubricId) {
+    const count = await mongoose.model('Rubric').countDocuments();
+    this.rubricId = `RBR${String(count + 1).padStart(6, '0')}`;
+  }
+  next();
+});
+
+// Validate that weights sum to 1 (runs after validation, before save)
 rubricSchema.pre('save', function (next) {
   if (this.criteria && this.criteria.length > 0) {
     const totalWeight = this.criteria.reduce((sum, criterion) => sum + criterion.weight, 0);
@@ -89,16 +100,7 @@ rubricSchema.pre('save', function (next) {
       return next(new Error('Criteria weights must sum to 1.0'));
     }
   }
-
-  // Auto-generate rubric ID if not provided
-  if (!this.rubricId) {
-    mongoose.model('Rubric').countDocuments().then((count) => {
-      this.rubricId = `RBR${String(count + 1).padStart(6, '0')}`;
-      next();
-    });
-  } else {
-    next();
-  }
+  next();
 });
 
 const Rubric = mongoose.model('Rubric', rubricSchema);

@@ -87,7 +87,9 @@ activitySchema.index({ createdBy: 1 });
 activitySchema.index({ isActive: 1 });
 
 // Auto-generate activity ID if not provided
-activitySchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+// and would fail on required check before save hook can generate the ID
+activitySchema.pre('validate', async function (next) {
   if (!this.activityId) {
     const typePrefix = {
       speaking: 'SPK',
