@@ -163,7 +163,7 @@ const Dashboard = () => {
       [ACTIVITY_TYPES.QUIZ]: `/student/activities/${activity._id}/quiz`,
     };
 
-    const route = routes[activity.type];
+    const route = routes[activity.activityType];
     if (route) {
       navigate(route);
     }
@@ -190,7 +190,7 @@ const Dashboard = () => {
       id: 'type',
       label: 'Type',
       format: (value, row) => (
-        <Chip label={row.activityId?.type || 'Unknown'} size="small" />
+        <Chip label={row.activityId?.activityType || 'Unknown'} size="small" />
       ),
     },
     {
@@ -404,7 +404,7 @@ const Dashboard = () => {
                           },
                         }}
                       >
-                        <ListItemIcon>{getActivityIcon(activity.type)}</ListItemIcon>
+                        <ListItemIcon>{getActivityIcon(activity.activityType)}</ListItemIcon>
                         <ListItemText
                           primary={activity.title}
                           secondary={
@@ -414,7 +414,7 @@ const Dashboard = () => {
                                 variant="body2"
                                 color="text.primary"
                               >
-                                {activity.type}
+                                {activity.activityType}
                               </Typography>
                               {' — Due: '}
                               {format(new Date(activity.deadline), 'MMM dd, yyyy HH:mm')}

@@ -69,7 +69,7 @@ const ActivityList = () => {
 
   const filteredActivities = activities.filter((activity) => {
     if (filter === 'all') return true;
-    return activity.type === filter;
+    return activity.activityType === filter;
   });
 
   // Navigate to appropriate submission page based on activity type
@@ -80,7 +80,7 @@ const ActivityList = () => {
       [ACTIVITY_TYPES.QUIZ]: `/student/activities/${activity._id}/quiz`,
     };
 
-    const route = routes[activity.type];
+    const route = routes[activity.activityType];
     if (route) {
       navigate(route);
     }
@@ -221,12 +221,12 @@ const ActivityList = () => {
                           alignItems: 'center',
                         }}
                       >
-                        {getActivityIcon(activity.type)}
+                        {getActivityIcon(activity.activityType)}
                       </Box>
                       <Box sx={{ flexGrow: 1 }}>
                         <Chip
-                          label={activity.type}
-                          color={getActivityColor(activity.type)}
+                          label={activity.activityType}
+                          color={getActivityColor(activity.activityType)}
                           size="small"
                         />
                       </Box>

@@ -58,7 +58,8 @@ feedbackSchema.index({ evaluationId: 1 });
 feedbackSchema.index({ generatedAt: -1 });
 
 // Auto-generate feedback ID if not provided
-feedbackSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+feedbackSchema.pre('validate', async function (next) {
   if (!this.feedbackId) {
     const count = await mongoose.model('Feedback').countDocuments();
     this.feedbackId = `FDBK${String(count + 1).padStart(8, '0')}`;

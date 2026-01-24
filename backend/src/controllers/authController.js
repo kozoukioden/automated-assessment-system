@@ -40,11 +40,11 @@ export const register = asyncHandler(async (req, res) => {
 
   // Create role-specific profile
   if (role === USER_ROLES.STUDENT) {
-    await Student.create({
-      userId: user._id,
-    });
+    // Use new + save() to properly trigger pre-validate hook for studentId generation
+    const student = new Student({ userId: user._id });
+    await student.save();
   } else if (role === USER_ROLES.TEACHER) {
-    // Use new + save() to trigger pre-save hook for auto-generating teacherId
+    // Use new + save() to trigger pre-validate hook for auto-generating teacherId
     const teacher = new Teacher({ userId: user._id });
     await teacher.save();
   }

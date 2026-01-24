@@ -74,7 +74,8 @@ mistakeSchema.index({ errorType: 1 });
 mistakeSchema.index({ severity: 1 });
 
 // Auto-generate mistake ID if not provided
-mistakeSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+mistakeSchema.pre('validate', async function (next) {
   if (!this.mistakeId) {
     const count = await mongoose.model('Mistake').countDocuments();
     this.mistakeId = `MSTK${String(count + 1).padStart(8, '0')}`;

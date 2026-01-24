@@ -93,7 +93,8 @@ auditLogSchema.index({ entityType: 1, entityId: 1 });
 auditLogSchema.index({ timestamp: -1 });
 
 // Auto-generate log ID if not provided
-auditLogSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+auditLogSchema.pre('validate', async function (next) {
   if (!this.logId) {
     const count = await mongoose.model('AuditLog').countDocuments();
     this.logId = `AUDT${String(count + 1).padStart(10, '0')}`;

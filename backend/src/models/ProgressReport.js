@@ -83,7 +83,8 @@ progressReportSchema.index({ generatedAt: -1 });
 progressReportSchema.index({ studentId: 1, year: 1, weekNumber: 1 }, { unique: true });
 
 // Auto-generate report ID if not provided
-progressReportSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+progressReportSchema.pre('validate', async function (next) {
   if (!this.reportId) {
     const count = await mongoose.model('ProgressReport').countDocuments();
     this.reportId = `PROG${String(count + 1).padStart(8, '0')}`;

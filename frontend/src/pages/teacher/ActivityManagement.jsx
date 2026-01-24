@@ -86,7 +86,7 @@ const ActivityManagement = () => {
 
     // Filter by type
     if (filterType !== 'all') {
-      filtered = filtered.filter((activity) => activity.type === filterType);
+      filtered = filtered.filter((activity) => activity.activityType === filterType);
     }
 
     // Filter by status

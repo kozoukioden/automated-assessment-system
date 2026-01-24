@@ -151,7 +151,7 @@ const SubmissionResults = () => {
 
               <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                 <Chip
-                  label={submission.activityId?.type || 'Unknown'}
+                  label={submission.activityId?.activityType || 'Unknown'}
                   variant="outlined"
                   size="small"
                 />
@@ -239,13 +239,13 @@ const SubmissionResults = () => {
             )}
 
             {/* Submission Content */}
-            {submission.activityId?.type === ACTIVITY_TYPES.SPEAKING && submission.audioUrl && (
+            {submission.activityId?.activityType === ACTIVITY_TYPES.SPEAKING && submission.audioUrl && (
               <CustomCard title="Your Recording" sx={{ mt: 3 }}>
                 <audio controls src={submission.audioUrl} style={{ width: '100%' }} />
               </CustomCard>
             )}
 
-            {submission.activityId?.type === ACTIVITY_TYPES.WRITING && submission.content && (
+            {submission.activityId?.activityType === ACTIVITY_TYPES.WRITING && submission.content && (
               <CustomCard title="Your Writing" sx={{ mt: 3 }}>
                 <Box
                   sx={{
@@ -258,7 +258,7 @@ const SubmissionResults = () => {
               </CustomCard>
             )}
 
-            {submission.activityId?.type === ACTIVITY_TYPES.QUIZ && submission.answers && (
+            {submission.activityId?.activityType === ACTIVITY_TYPES.QUIZ && submission.answers && (
               <CustomCard title="Your Answers" sx={{ mt: 3 }}>
                 <TableContainer>
                   <Table>

@@ -72,17 +72,20 @@ notificationSchema.index({ isRead: 1 });
 notificationSchema.index({ type: 1 });
 
 // Auto-generate notification ID if not provided
-notificationSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+notificationSchema.pre('validate', async function (next) {
   if (!this.notificationId) {
     const count = await mongoose.model('Notification').countDocuments();
     this.notificationId = `NOTF${String(count + 1).padStart(8, '0')}`;
   }
+  next();
+});
 
-  // Set readAt when isRead changes to true
+// Set readAt when isRead changes to true
+notificationSchema.pre('save', function (next) {
   if (this.isModified('isRead') && this.isRead && !this.readAt) {
     this.readAt = new Date();
   }
-
   next();
 });
 

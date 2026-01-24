@@ -5,6 +5,7 @@ import { HTTP_STATUS, SUBMISSION_STATUS, USER_ROLES } from '../config/constants.
 import { asyncHandler, formatSuccessResponse } from '../utils/helpers.js';
 import { AppError } from '../middleware/errorMiddleware.js';
 import { logger } from '../utils/logger.js';
+import { getOrCreateStudentProfile } from '../utils/studentHelper.js';
 
 /**
  * @desc    Submit Speaking Activity (FR2)
@@ -15,11 +16,8 @@ export const submitSpeakingActivity = asyncHandler(async (req, res) => {
   const { activityId, content } = req.body;
   const audioFile = req.file;
 
-  // Verify user is a student
-  const student = await Student.findOne({ userId: req.user._id });
-  if (!student) {
-    throw new AppError('Only students can submit activities', HTTP_STATUS.FORBIDDEN);
-  }
+  // Get or create student profile
+  const student = await getOrCreateStudentProfile(req.user._id);
 
   // Verify activity exists and is active
   const activity = await Activity.findById(activityId);
@@ -87,11 +85,8 @@ export const submitSpeakingActivity = asyncHandler(async (req, res) => {
 export const submitWritingActivity = asyncHandler(async (req, res) => {
   const { activityId, content } = req.body;
 
-  // Verify user is a student
-  const student = await Student.findOne({ userId: req.user._id });
-  if (!student) {
-    throw new AppError('Only students can submit activities', HTTP_STATUS.FORBIDDEN);
-  }
+  // Get or create student profile
+  const student = await getOrCreateStudentProfile(req.user._id);
 
   // Verify activity exists and is active
   const activity = await Activity.findById(activityId);
@@ -165,11 +160,8 @@ export const submitWritingActivity = asyncHandler(async (req, res) => {
 export const submitQuizActivity = asyncHandler(async (req, res) => {
   const { activityId, content } = req.body;
 
-  // Verify user is a student
-  const student = await Student.findOne({ userId: req.user._id });
-  if (!student) {
-    throw new AppError('Only students can submit activities', HTTP_STATUS.FORBIDDEN);
-  }
+  // Get or create student profile
+  const student = await getOrCreateStudentProfile(req.user._id);
 
   // Verify activity exists and is active
   const activity = await Activity.findById(activityId);
@@ -273,10 +265,8 @@ export const getSubmission = asyncHandler(async (req, res) => {
 export const getMySubmissions = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, status } = req.query;
 
-  const student = await Student.findOne({ userId: req.user._id });
-  if (!student) {
-    throw new AppError('Student profile not found', HTTP_STATUS.NOT_FOUND);
-  }
+  // Get or create student profile
+  const student = await getOrCreateStudentProfile(req.user._id);
 
   const result = await SubmissionRepository.findByStudent(student._id, {
     page: parseInt(page),

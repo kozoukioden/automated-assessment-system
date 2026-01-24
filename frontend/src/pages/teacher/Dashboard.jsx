@@ -132,8 +132,8 @@ const Dashboard = () => {
     const types = { speaking: 0, writing: 0, quiz: 0 };
 
     activities.forEach((activity) => {
-      if (types.hasOwnProperty(activity.type)) {
-        types[activity.type]++;
+      if (types.hasOwnProperty(activity.activityType)) {
+        types[activity.activityType]++;
       }
     });
 

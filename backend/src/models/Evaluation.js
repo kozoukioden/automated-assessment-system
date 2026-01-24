@@ -80,7 +80,8 @@ evaluationSchema.index({ evaluatedAt: -1 });
 evaluationSchema.index({ reviewedByTeacher: 1 });
 
 // Auto-generate evaluation ID if not provided
-evaluationSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+evaluationSchema.pre('validate', async function (next) {
   if (!this.evaluationId) {
     const count = await mongoose.model('Evaluation').countDocuments();
     this.evaluationId = `EVAL${String(count + 1).padStart(8, '0')}`;

@@ -89,7 +89,7 @@ const PendingReviews = () => {
 
     // Filter by type
     if (filterType !== 'all') {
-      filtered = filtered.filter((sub) => sub.activity?.type === filterType);
+      filtered = filtered.filter((sub) => sub.activity?.activityType === filterType);
     }
 
     // Filter by priority (based on submission date - older submissions have higher priority)

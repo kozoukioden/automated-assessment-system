@@ -112,7 +112,7 @@ const MyProgress = () => {
     };
 
     submissions.forEach((sub) => {
-      const type = sub.activityId?.type;
+      const type = sub.activityId?.activityType;
       if (type && types[type] && sub.evaluationId?.overallScore !== undefined) {
         types[type].scores.push(sub.evaluationId.overallScore);
         types[type].count++;
@@ -154,7 +154,7 @@ const MyProgress = () => {
       id: 'type',
       label: 'Type',
       format: (value, row) => (
-        <Chip label={row.activityId?.type || 'Unknown'} size="small" />
+        <Chip label={row.activityId?.activityType || 'Unknown'} size="small" />
       ),
     },
     {

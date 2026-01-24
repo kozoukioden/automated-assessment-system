@@ -70,7 +70,8 @@ submissionSchema.index({ submittedAt: -1 });
 submissionSchema.index({ studentId: 1, activityId: 1 });
 
 // Auto-generate submission ID if not provided
-submissionSchema.pre('save', async function (next) {
+// IMPORTANT: Use pre('validate') not pre('save') because validation runs first
+submissionSchema.pre('validate', async function (next) {
   if (!this.submissionId) {
     const typePrefix = {
       speaking: 'SPKS',
