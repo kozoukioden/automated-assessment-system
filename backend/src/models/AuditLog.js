@@ -11,7 +11,7 @@ const auditLogSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'User ID is required'],
+      // Not required - some audit events (like LOGIN_FAILED) may not have userId
     },
     action: {
       type: String,

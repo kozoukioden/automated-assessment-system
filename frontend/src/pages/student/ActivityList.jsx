@@ -74,10 +74,11 @@ const ActivityList = () => {
 
   // Navigate to appropriate submission page based on activity type
   const handleStartActivity = (activity) => {
+    // Routes match AppRoutes.jsx: /student/activities/speaking/:id
     const routes = {
-      [ACTIVITY_TYPES.SPEAKING]: `/student/activities/${activity._id}/speaking`,
-      [ACTIVITY_TYPES.WRITING]: `/student/activities/${activity._id}/writing`,
-      [ACTIVITY_TYPES.QUIZ]: `/student/activities/${activity._id}/quiz`,
+      [ACTIVITY_TYPES.SPEAKING]: `/student/activities/speaking/${activity._id}`,
+      [ACTIVITY_TYPES.WRITING]: `/student/activities/writing/${activity._id}`,
+      [ACTIVITY_TYPES.QUIZ]: `/student/activities/quiz/${activity._id}`,
     };
 
     const route = routes[activity.activityType];

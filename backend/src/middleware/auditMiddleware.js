@@ -11,14 +11,14 @@ export const auditLog = (action, entityType) => {
     const originalJson = res.json.bind(res);
 
     res.json = function (data) {
-      // Only log if request was successful
-      if (res.statusCode >= 200 && res.statusCode < 300) {
+      // Only log if request was successful and user is authenticated
+      if (res.statusCode >= 200 && res.statusCode < 300 && req.user?._id) {
         // Extract entity ID from response or params
         const entityId = data?.data?._id || req.params.id || req.body._id;
 
         // Create audit log entry
         const logData = {
-          userId: req.user?._id,
+          userId: req.user._id,
           action,
           entityType,
           entityId,
