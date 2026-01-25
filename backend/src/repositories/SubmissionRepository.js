@@ -18,7 +18,7 @@ class SubmissionRepository {
   }
 
   /**
-   * Find submissions by student
+   * Find submissions by student (with evaluation data)
    */
   async findByStudent(studentId, { page = 1, limit = 10, status = null } = {}) {
     const query = { studentId };
@@ -27,16 +27,89 @@ class SubmissionRepository {
 
     const skip = (page - 1) * limit;
 
-    const [submissions, total] = await Promise.all([
-      Submission.find(query)
-        .populate('activityId', 'title activityType difficulty')
-        .sort({ submittedAt: -1 })
-        .skip(skip)
-        .limit(limit),
+    // Use aggregation to join with evaluations
+    const pipeline = [
+      { $match: query },
+      { $sort: { submittedAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      // Lookup evaluation for each submission
+      {
+        $lookup: {
+          from: 'evaluations',
+          localField: '_id',
+          foreignField: 'submissionId',
+          as: 'evaluationData'
+        }
+      },
+      // Unwind the evaluation array (there's only one per submission)
+      {
+        $unwind: {
+          path: '$evaluationData',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      // Lookup activity details
+      {
+        $lookup: {
+          from: 'activities',
+          localField: 'activityId',
+          foreignField: '_id',
+          as: 'activityData'
+        }
+      },
+      {
+        $unwind: {
+          path: '$activityData',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      // Project the final structure
+      {
+        $project: {
+          _id: 1,
+          submissionId: 1,
+          studentId: 1,
+          activityId: {
+            _id: '$activityData._id',
+            title: '$activityData.title',
+            activityType: '$activityData.activityType',
+            difficulty: '$activityData.difficulty'
+          },
+          contentType: 1,
+          content: 1,
+          status: 1,
+          submittedAt: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          // Include evaluation as evaluationId for frontend compatibility
+          evaluationId: {
+            _id: '$evaluationData._id',
+            evaluationId: '$evaluationData.evaluationId',
+            overallScore: '$evaluationData.overallScore',
+            grammarScore: '$evaluationData.grammarScore',
+            vocabularyScore: '$evaluationData.vocabularyScore',
+            aiConfidence: '$evaluationData.aiConfidence',
+            reviewedByTeacher: '$evaluationData.reviewedByTeacher'
+          }
+        }
+      }
+    ];
+
+    const [submissions, totalResult] = await Promise.all([
+      Submission.aggregate(pipeline),
       Submission.countDocuments(query),
     ]);
 
-    return { submissions, total, page, limit };
+    // Clean up null evaluationId objects (when no evaluation exists)
+    const cleanedSubmissions = submissions.map(sub => {
+      if (sub.evaluationId && !sub.evaluationId._id) {
+        sub.evaluationId = null;
+      }
+      return sub;
+    });
+
+    return { submissions: cleanedSubmissions, total: totalResult, page, limit };
   }
 
   /**
