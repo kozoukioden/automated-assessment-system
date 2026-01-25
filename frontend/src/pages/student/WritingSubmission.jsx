@@ -38,6 +38,7 @@ const WritingSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   // Fetch activity details on component mount
   useEffect(() => {
@@ -79,7 +80,18 @@ const WritingSubmission = () => {
   };
 
   const handleSubmit = async () => {
-    if (!content || content.trim() === '') {
+    setSubmitError('');
+
+    const trimmedContent = content.trim();
+
+    // Validate minimum 10 characters (backend requirement)
+    if (!trimmedContent) {
+      setSubmitError('Please write something before submitting.');
+      return;
+    }
+
+    if (trimmedContent.length < 10) {
+      setSubmitError('Your writing must be at least 10 characters long.');
       return;
     }
 
@@ -90,7 +102,7 @@ const WritingSubmission = () => {
       const response = await api.post(ENDPOINTS.SUBMISSIONS.WRITING, {
         activityId: id,
         content: {
-          text: content.trim(),
+          text: trimmedContent,
           title: activity?.title || 'Writing Submission',
         },
       });
@@ -112,6 +124,8 @@ const WritingSubmission = () => {
       }
     } catch (err) {
       console.error('Submission error:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to submit. Please try again.';
+      setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -269,7 +283,10 @@ const WritingSubmission = () => {
                 minRows={15}
                 maxRows={30}
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => {
+                  setContent(e.target.value);
+                  if (submitError) setSubmitError('');
+                }}
                 placeholder="Start writing your response here..."
                 variant="outlined"
                 sx={{
@@ -296,6 +313,20 @@ const WritingSubmission = () => {
               )}
             </CustomCard>
 
+            {/* Submit Error */}
+            {submitError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {submitError}
+              </Alert>
+            )}
+
+            {/* Minimum character warning */}
+            {content && content.trim().length > 0 && content.trim().length < 10 && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Your writing must be at least 10 characters. Currently: {content.trim().length} characters.
+              </Alert>
+            )}
+
             {/* Submit Button */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
               <Button
@@ -311,7 +342,7 @@ const WritingSubmission = () => {
                 size="large"
                 startIcon={<SendIcon />}
                 onClick={handleSubmit}
-                disabled={!content || content.trim() === '' || isSubmitting}
+                disabled={!content || content.trim().length < 10 || isSubmitting}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Writing'}
               </Button>
