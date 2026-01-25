@@ -1,5 +1,4 @@
 import SubmissionRepository from '../repositories/SubmissionRepository.js';
-import Student from '../models/Student.js';
 import Activity from '../models/Activity.js';
 import { HTTP_STATUS, SUBMISSION_STATUS, USER_ROLES } from '../config/constants.js';
 import { asyncHandler, formatSuccessResponse } from '../utils/helpers.js';
@@ -246,10 +245,10 @@ export const getSubmission = asyncHandler(async (req, res) => {
   }
 
   // Check permission: Student can only view their own, Teachers/Admins can view all
-  const student = await Student.findOne({ userId: req.user._id });
-
   if (req.user.role === USER_ROLES.STUDENT) {
-    if (!student || submission.studentId.toString() !== student._id.toString()) {
+    // Use getOrCreateStudentProfile for consistency with submission creation
+    const student = await getOrCreateStudentProfile(req.user._id);
+    if (submission.studentId.toString() !== student._id.toString()) {
       throw new AppError('You can only view your own submissions', HTTP_STATUS.FORBIDDEN);
     }
   }
@@ -312,8 +311,9 @@ export const deleteSubmission = asyncHandler(async (req, res) => {
 
   // Check permission
   if (req.user.role === USER_ROLES.STUDENT) {
-    const student = await Student.findOne({ userId: req.user._id });
-    if (!student || submission.studentId.toString() !== student._id.toString()) {
+    // Use getOrCreateStudentProfile for consistency
+    const student = await getOrCreateStudentProfile(req.user._id);
+    if (submission.studentId.toString() !== student._id.toString()) {
       throw new AppError('You can only delete your own submissions', HTTP_STATUS.FORBIDDEN);
     }
   }
