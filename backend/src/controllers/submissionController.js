@@ -248,7 +248,9 @@ export const getSubmission = asyncHandler(async (req, res) => {
   if (req.user.role === USER_ROLES.STUDENT) {
     // Use getOrCreateStudentProfile for consistency with submission creation
     const student = await getOrCreateStudentProfile(req.user._id);
-    if (submission.studentId.toString() !== student._id.toString()) {
+    // Handle populated studentId (could be object or ObjectId)
+    const submissionStudentId = submission.studentId._id || submission.studentId;
+    if (submissionStudentId.toString() !== student._id.toString()) {
       throw new AppError('You can only view your own submissions', HTTP_STATUS.FORBIDDEN);
     }
   }
@@ -313,7 +315,9 @@ export const deleteSubmission = asyncHandler(async (req, res) => {
   if (req.user.role === USER_ROLES.STUDENT) {
     // Use getOrCreateStudentProfile for consistency
     const student = await getOrCreateStudentProfile(req.user._id);
-    if (submission.studentId.toString() !== student._id.toString()) {
+    // Handle populated studentId (could be object or ObjectId)
+    const submissionStudentId = submission.studentId._id || submission.studentId;
+    if (submissionStudentId.toString() !== student._id.toString()) {
       throw new AppError('You can only delete your own submissions', HTTP_STATUS.FORBIDDEN);
     }
   }
