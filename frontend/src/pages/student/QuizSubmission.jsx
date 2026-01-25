@@ -130,19 +130,21 @@ const QuizSubmission = () => {
     }
 
     try {
-      // Format answers for submission
-      const formattedAnswers = questions.map((question, index) => ({
-        questionId: question._id || index,
-        question: question.question,
-        selectedAnswer: answers[index] || null,
-        correctAnswer: question.correctAnswer,
-      }));
+      // Format answers as simple array (backend expects content.answers as array of answer values)
+      const formattedAnswers = questions.map((question, index) => answers[index] || null);
 
+      // Calculate time taken in seconds
+      const timeTaken = activity?.timeLimit
+        ? (activity.timeLimit * 60 - (timeRemaining || 0))
+        : null;
+
+      // Backend expects: { activityId, content: { answers: [], timeTaken } }
       const response = await api.post(ENDPOINTS.SUBMISSIONS.QUIZ, {
         activityId: id,
-        studentId: user._id,
-        answers: formattedAnswers,
-        timeSpent: activity?.timeLimit ? (activity.timeLimit * 60 - (timeRemaining || 0)) : null,
+        content: {
+          answers: formattedAnswers,
+          timeTaken: timeTaken,
+        },
       });
 
       if (response.success !== false) {

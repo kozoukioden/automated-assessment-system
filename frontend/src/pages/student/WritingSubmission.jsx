@@ -88,10 +88,16 @@ const WritingSubmission = () => {
     setIsSubmitting(true);
 
     try {
+      // Strip HTML tags to get plain text for backend
+      const plainText = content.replace(/<[^>]*>/g, '').trim();
+
+      // Backend expects: { activityId, content: { text: "...", title: "..." } }
       const response = await api.post(ENDPOINTS.SUBMISSIONS.WRITING, {
         activityId: id,
-        studentId: user._id,
-        content: content,
+        content: {
+          text: plainText,
+          title: activity?.title || 'Writing Submission',
+        },
       });
 
       if (response.success !== false) {
