@@ -162,8 +162,14 @@ const SpeakingSubmission = () => {
 
       if (response.success !== false) {
         // Navigate to submission results
-        const submissionId = response.data?.submission?._id || response.data?._id;
-        navigate(`/student/submissions/${submissionId}`);
+        // Backend returns `id` not `_id` in the response
+        const submissionId = response.data?.submission?.id || response.data?.submission?._id || response.data?.id || response.data?._id;
+        if (submissionId) {
+          navigate(`/student/submissions/${submissionId}`);
+        } else {
+          // Fallback: go to submissions list
+          navigate('/student/activities');
+        }
       }
     } catch (err) {
       console.error('Submission error:', err);

@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import {
   Typography,
   Box,
@@ -9,8 +7,8 @@ import {
   LinearProgress,
   Alert,
   Divider,
-  Paper,
   Chip,
+  TextField,
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -28,7 +26,7 @@ import { ENDPOINTS } from '../../config/env';
 
 /**
  * WritingSubmission Component
- * Rich text editor for writing activities
+ * Text editor for writing activities
  */
 const WritingSubmission = () => {
   const { id } = useParams();
@@ -81,21 +79,18 @@ const WritingSubmission = () => {
   };
 
   const handleSubmit = async () => {
-    if (!content || content.trim() === '' || content === '<p><br></p>') {
+    if (!content || content.trim() === '') {
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Strip HTML tags to get plain text for backend
-      const plainText = content.replace(/<[^>]*>/g, '').trim();
-
       // Backend expects: { activityId, content: { text: "...", title: "..." } }
       const response = await api.post(ENDPOINTS.SUBMISSIONS.WRITING, {
         activityId: id,
         content: {
-          text: plainText,
+          text: content.trim(),
           title: activity?.title || 'Writing Submission',
         },
       });
@@ -106,8 +101,14 @@ const WritingSubmission = () => {
         localStorage.removeItem(draftKey);
 
         // Navigate to submission results
-        const submissionId = response.data?.submission?._id || response.data?._id;
-        navigate(`/student/submissions/${submissionId}`);
+        // Backend returns `id` not `_id` in the response
+        const submissionId = response.data?.submission?.id || response.data?.submission?._id || response.data?.id || response.data?._id;
+        if (submissionId) {
+          navigate(`/student/submissions/${submissionId}`);
+        } else {
+          // Fallback: go to submissions list
+          navigate('/student/activities');
+        }
       }
     } catch (err) {
       console.error('Submission error:', err);
@@ -118,39 +119,14 @@ const WritingSubmission = () => {
 
   // Count words and characters
   const getTextStats = () => {
-    // Strip HTML tags for accurate count
-    const text = content.replace(/<[^>]*>/g, '').trim();
-    const words = text ? text.split(/\s+/).length : 0;
+    const text = content.trim();
+    const words = text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
     const characters = text.length;
 
     return { words, characters };
   };
 
   const stats = getTextStats();
-
-  // Quill editor modules
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ indent: '-1' }, { indent: '+1' }],
-      ['link'],
-      ['clean'],
-    ],
-  };
-
-  const formats = [
-    'header',
-    'bold',
-    'italic',
-    'underline',
-    'strike',
-    'list',
-    'bullet',
-    'indent',
-    'link',
-  ];
 
   if (loading && !activity) {
     return (
@@ -286,30 +262,23 @@ const WritingSubmission = () => {
                 </Alert>
               )}
 
-              {/* Rich Text Editor */}
-              <Box
+              {/* Text Editor - Using TextField instead of ReactQuill for React 18 compatibility */}
+              <TextField
+                multiline
+                fullWidth
+                minRows={15}
+                maxRows={30}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Start writing your response here..."
+                variant="outlined"
                 sx={{
-                  '& .quill': {
-                    backgroundColor: 'background.paper',
-                  },
-                  '& .ql-container': {
-                    minHeight: '400px',
+                  '& .MuiOutlinedInput-root': {
                     fontSize: '16px',
-                  },
-                  '& .ql-editor': {
-                    minHeight: '400px',
+                    lineHeight: 1.6,
                   },
                 }}
-              >
-                <ReactQuill
-                  theme="snow"
-                  value={content}
-                  onChange={setContent}
-                  modules={modules}
-                  formats={formats}
-                  placeholder="Start writing your response here..."
-                />
-              </Box>
+              />
 
               {activity.wordCount && (
                 <Box sx={{ mt: 2 }}>
@@ -342,7 +311,7 @@ const WritingSubmission = () => {
                 size="large"
                 startIcon={<SendIcon />}
                 onClick={handleSubmit}
-                disabled={!content || content.trim() === '' || content === '<p><br></p>' || isSubmitting}
+                disabled={!content || content.trim() === '' || isSubmitting}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Writing'}
               </Button>
