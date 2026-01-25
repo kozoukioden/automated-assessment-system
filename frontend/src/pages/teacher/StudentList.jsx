@@ -7,11 +7,18 @@ import {
   TextField,
   InputAdornment,
   IconButton,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
   Search as SearchIcon,
   People as PeopleIcon,
+  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import TeacherLayout from '../../components/common/Layout/TeacherLayout';
@@ -33,6 +40,13 @@ const StudentList = () => {
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Add Student Dialog
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [newStudent, setNewStudent] = useState({ name: '', email: '', password: '' });
+  const [addError, setAddError] = useState('');
+  const [addSuccess, setAddSuccess] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+
   useEffect(() => {
     fetchStudents();
   }, []);
@@ -53,6 +67,36 @@ const StudentList = () => {
       setError(err.response?.data?.message || 'Failed to load students');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddStudent = async () => {
+    if (!newStudent.name || !newStudent.email || !newStudent.password) {
+      setAddError('Please fill in all fields');
+      return;
+    }
+
+    if (newStudent.password.length < 6) {
+      setAddError('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsAdding(true);
+    setAddError('');
+
+    try {
+      await api.post('/teacher/students', newStudent);
+      setAddSuccess('Student added successfully!');
+      setNewStudent({ name: '', email: '', password: '' });
+      fetchStudents(); // Refresh the list
+      setTimeout(() => {
+        setOpenAddDialog(false);
+        setAddSuccess('');
+      }, 1500);
+    } catch (err) {
+      setAddError(err.response?.data?.message || 'Failed to add student');
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -203,6 +247,13 @@ const StudentList = () => {
               View student performance and track their progress.
             </Typography>
           </Box>
+          <Button
+            variant="contained"
+            startIcon={<PersonAddIcon />}
+            onClick={() => setOpenAddDialog(true)}
+          >
+            Add Student
+          </Button>
         </Box>
 
         {/* Search */}
@@ -234,6 +285,62 @@ const StudentList = () => {
           onRowClick={(row) => navigate(`/teacher/students/${row._id}`)}
         />
       </CustomCard>
+
+      {/* Add Student Dialog */}
+      <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add New Student</DialogTitle>
+        <DialogContent>
+          {addError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {addError}
+            </Alert>
+          )}
+          {addSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {addSuccess}
+            </Alert>
+          )}
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Full Name"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={newStudent.name}
+            onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Email Address"
+            type="email"
+            fullWidth
+            variant="outlined"
+            value={newStudent.email}
+            onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Password"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={newStudent.password}
+            onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })}
+            helperText="Minimum 6 characters"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAddDialog(false)} disabled={isAdding}>
+            Cancel
+          </Button>
+          <Button onClick={handleAddStudent} variant="contained" disabled={isAdding}>
+            {isAdding ? 'Adding...' : 'Add Student'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </TeacherLayout>
   );
 };

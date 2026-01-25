@@ -2,7 +2,8 @@ import express from 'express';
 import {
   getTeacherProfile,
   getTeacherStudents,
-  getTeacherAnalytics
+  getTeacherAnalytics,
+  createStudent
 } from '../controllers/teacherController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { isTeacherOrAdmin } from '../middleware/roleMiddleware.js';
@@ -22,6 +23,13 @@ router.get('/me', authenticate, isTeacherOrAdmin, getTeacherProfile);
  * @access  Private (Teacher, Admin)
  */
 router.get('/students', authenticate, isTeacherOrAdmin, getTeacherStudents);
+
+/**
+ * @route   POST /api/teacher/students
+ * @desc    Create a new student account
+ * @access  Private (Teacher, Admin)
+ */
+router.post('/students', authenticate, isTeacherOrAdmin, createStudent);
 
 /**
  * @route   GET /api/teacher/analytics

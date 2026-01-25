@@ -4,10 +4,12 @@ import User from '../models/User.js';
 import Activity from '../models/Activity.js';
 import Submission from '../models/Submission.js';
 import Evaluation from '../models/Evaluation.js';
-import { HTTP_STATUS } from '../config/constants.js';
+import { HTTP_STATUS, USER_ROLES } from '../config/constants.js';
 import { asyncHandler, formatSuccessResponse } from '../utils/helpers.js';
 import { AppError } from '../middleware/errorMiddleware.js';
 import { getOrCreateTeacherProfile } from '../utils/teacherHelper.js';
+import bcrypt from 'bcryptjs';
+import { logger } from '../utils/logger.js';
 
 /**
  * @desc    Get current teacher profile
@@ -153,8 +155,63 @@ export const getTeacherAnalytics = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * @desc    Create a new student (Teacher can add students)
+ * @route   POST /api/teacher/students
+ * @access  Private (Teacher)
+ */
+export const createStudent = asyncHandler(async (req, res) => {
+  const { email, password, name } = req.body;
+
+  // Validate required fields
+  if (!email || !password || !name) {
+    throw new AppError('Email, password, and name are required', HTTP_STATUS.BAD_REQUEST);
+  }
+
+  // Check if user already exists
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  if (existingUser) {
+    throw new AppError('A user with this email already exists', HTTP_STATUS.CONFLICT);
+  }
+
+  // Hash password
+  const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
+  const passwordHash = await bcrypt.hash(password, saltRounds);
+
+  // Create user with student role
+  const user = await User.create({
+    email: email.toLowerCase(),
+    passwordHash,
+    name,
+    role: USER_ROLES.STUDENT,
+    isActive: true
+  });
+
+  // Create student profile
+  const student = await Student.create({
+    userId: user._id
+  });
+
+  logger.info(`Student created by teacher: ${user.email}`);
+
+  res.status(HTTP_STATUS.CREATED).json(
+    formatSuccessResponse(
+      {
+        student: {
+          id: student._id,
+          studentId: student.studentId,
+          email: user.email,
+          name: user.name,
+        },
+      },
+      'Student created successfully'
+    )
+  );
+});
+
 export default {
   getTeacherProfile,
   getTeacherStudents,
-  getTeacherAnalytics
+  getTeacherAnalytics,
+  createStudent
 };
