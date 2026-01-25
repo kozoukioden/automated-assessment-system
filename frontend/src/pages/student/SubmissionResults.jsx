@@ -63,21 +63,22 @@ const SubmissionResults = () => {
       const submissionData = result.data.submission || result.data;
       setSubmission(submissionData);
 
-      // Fetch evaluation if submission is completed
-      if (submissionData.status === SUBMISSION_STATUS.COMPLETED && submissionData.evaluationId) {
-        fetchEvaluation(submissionData.evaluationId);
+      // Fetch evaluation by submission ID (evaluation is linked via submissionId, not evaluationId)
+      if (submissionData.status === SUBMISSION_STATUS.COMPLETED || submissionData.status === 'completed') {
+        fetchEvaluationBySubmission(submissionData._id || id);
       }
     }
   };
 
-  const fetchEvaluation = async (evaluationId) => {
-    const result = await execute(
-      () => api.get(ENDPOINTS.EVALUATIONS.BY_ID(evaluationId)),
-      { showErrorToast: false }
-    );
-
-    if (result.success) {
-      setEvaluation(result.data.evaluation || result.data);
+  const fetchEvaluationBySubmission = async (submissionId) => {
+    try {
+      const result = await api.get(ENDPOINTS.EVALUATIONS.BY_SUBMISSION(submissionId));
+      const evaluationData = result.data?.evaluation || result.evaluation || result.data || result;
+      if (evaluationData && evaluationData.overallScore !== undefined) {
+        setEvaluation(evaluationData);
+      }
+    } catch (err) {
+      console.log('Evaluation not found for submission:', submissionId);
     }
   };
 
@@ -245,20 +246,24 @@ const SubmissionResults = () => {
               </CustomCard>
             )}
 
-            {submission.activityId?.activityType === ACTIVITY_TYPES.WRITING && submission.content && (
+            {submission.activityId?.activityType === ACTIVITY_TYPES.WRITING && (submission.content?.text || submission.content) && (
               <CustomCard title="Your Writing" sx={{ mt: 3 }}>
                 <Box
                   sx={{
                     p: 2,
                     backgroundColor: 'background.default',
                     borderRadius: 1,
+                    whiteSpace: 'pre-wrap',
                   }}
-                  dangerouslySetInnerHTML={{ __html: submission.content }}
-                />
+                >
+                  <Typography variant="body1">
+                    {submission.content?.text || submission.content}
+                  </Typography>
+                </Box>
               </CustomCard>
             )}
 
-            {submission.activityId?.activityType === ACTIVITY_TYPES.QUIZ && submission.answers && (
+            {submission.activityId?.activityType === ACTIVITY_TYPES.QUIZ && (submission.content?.answers || submission.answers) && (
               <CustomCard title="Your Answers" sx={{ mt: 3 }}>
                 <TableContainer>
                   <Table>
@@ -271,13 +276,13 @@ const SubmissionResults = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {submission.answers.map((answer, index) => {
-                        const isCorrect = answer.selectedAnswer === answer.correctAnswer;
+                      {(submission.content?.answers || submission.answers || []).map((answer, index) => {
+                        const isCorrect = answer.answer === answer.correctAnswer || answer.selectedAnswer === answer.correctAnswer;
                         return (
                           <TableRow key={index}>
-                            <TableCell>{answer.question}</TableCell>
-                            <TableCell>{answer.selectedAnswer || 'Not answered'}</TableCell>
-                            <TableCell>{answer.correctAnswer}</TableCell>
+                            <TableCell>{answer.questionText || answer.question || `Question ${index + 1}`}</TableCell>
+                            <TableCell>{answer.answer || answer.selectedAnswer || 'Not answered'}</TableCell>
+                            <TableCell>{answer.correctAnswer || 'N/A'}</TableCell>
                             <TableCell align="center">
                               {isCorrect ? (
                                 <CheckCircleIcon color="success" />
