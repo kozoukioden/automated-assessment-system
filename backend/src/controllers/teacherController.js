@@ -8,7 +8,7 @@ import { HTTP_STATUS, USER_ROLES } from '../config/constants.js';
 import { asyncHandler, formatSuccessResponse } from '../utils/helpers.js';
 import { AppError } from '../middleware/errorMiddleware.js';
 import { getOrCreateTeacherProfile } from '../utils/teacherHelper.js';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { logger } from '../utils/logger.js';
 
 /**

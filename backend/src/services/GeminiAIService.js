@@ -10,7 +10,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 class GeminiAIService {
   constructor() {
-    this.model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    // Use gemini-1.5-flash (gemini-pro is deprecated)
+    this.model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   }
 
   /**
@@ -239,7 +240,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
         aiConfidence: Math.min(1, Math.max(0, parsed.confidence || 0.85)),
         reasoning: parsed.reasoning || '',
         aiProvider: 'gemini',
-        aiModel: 'gemini-pro'
+        aiModel: 'gemini-1.5-flash'
       };
     } catch (error) {
       logger.error(`Failed to parse Gemini evaluation response: ${error.message}`);
@@ -253,7 +254,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
         aiConfidence: 0.7,
         reasoning: 'Auto-generated evaluation',
         aiProvider: 'gemini',
-        aiModel: 'gemini-pro'
+        aiModel: 'gemini-1.5-flash'
       };
     }
   }
