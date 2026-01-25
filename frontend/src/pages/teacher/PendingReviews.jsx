@@ -82,8 +82,8 @@ const PendingReviews = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (sub) =>
-          sub.student?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          sub.activity?.title.toLowerCase().includes(searchTerm.toLowerCase())
+          sub.student?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          sub.activity?.title?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -208,7 +208,7 @@ const PendingReviews = () => {
           color="primary"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/teacher/review/${row._id}`);
+            navigate(`/teacher/reviews/${row._id}`);
           }}
         >
           <VisibilityIcon fontSize="small" />
@@ -311,7 +311,7 @@ const PendingReviews = () => {
           rows={filteredSubmissions}
           emptyMessage="No pending reviews"
           emptyIcon={ReviewIcon}
-          onRowClick={(row) => navigate(`/teacher/review/${row._id}`)}
+          onRowClick={(row) => navigate(`/teacher/reviews/${row._id}`)}
         />
       </CustomCard>
     </TeacherLayout>

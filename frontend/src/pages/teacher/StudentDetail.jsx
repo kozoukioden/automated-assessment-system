@@ -217,7 +217,7 @@ const StudentDetail = () => {
           color="primary"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/teacher/review/${row._id}`);
+            navigate(`/teacher/reviews/${row._id}`);
           }}
         >
           <VisibilityIcon fontSize="small" />
@@ -415,7 +415,7 @@ const StudentDetail = () => {
           rows={submissions}
           emptyMessage="No submissions yet"
           emptyIcon={AssignmentIcon}
-          onRowClick={(row) => navigate(`/teacher/review/${row._id}`)}
+          onRowClick={(row) => navigate(`/teacher/reviews/${row._id}`)}
         />
       </CustomCard>
     </TeacherLayout>

@@ -62,8 +62,8 @@ const StudentList = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (student) =>
-          student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           student.studentId?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -79,6 +79,7 @@ const StudentList = () => {
   };
 
   const getInitials = (name) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -100,7 +101,7 @@ const StudentList = () => {
             height: 40,
           }}
         >
-          {getInitials(row.name)}
+          {getInitials(row.name || row.email)}
         </Avatar>
       ),
     },
@@ -108,11 +109,13 @@ const StudentList = () => {
       id: 'name',
       label: 'Student Name',
       minWidth: 200,
+      format: (value) => value || 'Unknown',
     },
     {
       id: 'email',
       label: 'Email',
       minWidth: 200,
+      format: (value) => value || 'N/A',
     },
     {
       id: 'studentId',
