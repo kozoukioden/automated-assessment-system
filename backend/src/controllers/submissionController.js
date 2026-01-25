@@ -5,6 +5,7 @@ import { asyncHandler, formatSuccessResponse } from '../utils/helpers.js';
 import { AppError } from '../middleware/errorMiddleware.js';
 import { logger } from '../utils/logger.js';
 import { getOrCreateStudentProfile } from '../utils/studentHelper.js';
+import AIEvaluationService from '../services/AIEvaluationService.js';
 
 /**
  * @desc    Submit Speaking Activity (FR2)
@@ -58,6 +59,15 @@ export const submitSpeakingActivity = asyncHandler(async (req, res) => {
   logger.info(
     `Speaking submission created: ${submission.submissionId} by student ${student.studentId}`
   );
+
+  // Trigger AI evaluation asynchronously (don't block response)
+  AIEvaluationService.evaluateSubmission(submission._id)
+    .then(() => {
+      logger.info(`AI evaluation completed for speaking submission ${submission.submissionId}`);
+    })
+    .catch((err) => {
+      logger.error(`AI evaluation failed for speaking submission ${submission.submissionId}: ${err.message}`);
+    });
 
   res.status(HTTP_STATUS.CREATED).json(
     formatSuccessResponse(
@@ -131,6 +141,15 @@ export const submitWritingActivity = asyncHandler(async (req, res) => {
   logger.info(
     `Writing submission created: ${submission.submissionId} by student ${student.studentId}`
   );
+
+  // Trigger AI evaluation asynchronously (don't block response)
+  AIEvaluationService.evaluateSubmission(submission._id)
+    .then(() => {
+      logger.info(`AI evaluation completed for writing submission ${submission.submissionId}`);
+    })
+    .catch((err) => {
+      logger.error(`AI evaluation failed for writing submission ${submission.submissionId}: ${err.message}`);
+    });
 
   res.status(HTTP_STATUS.CREATED).json(
     formatSuccessResponse(
@@ -213,6 +232,15 @@ export const submitQuizActivity = asyncHandler(async (req, res) => {
   logger.info(
     `Quiz submission created: ${submission.submissionId} by student ${student.studentId}`
   );
+
+  // Trigger AI evaluation asynchronously (don't block response)
+  AIEvaluationService.evaluateSubmission(submission._id)
+    .then(() => {
+      logger.info(`AI evaluation completed for quiz submission ${submission.submissionId}`);
+    })
+    .catch((err) => {
+      logger.error(`AI evaluation failed for quiz submission ${submission.submissionId}: ${err.message}`);
+    });
 
   res.status(HTTP_STATUS.CREATED).json(
     formatSuccessResponse(
