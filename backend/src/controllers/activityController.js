@@ -1,6 +1,7 @@
 import Activity from '../models/Activity.js';
 import { logger } from '../utils/logger.js';
 import { getOrCreateTeacherProfile } from '../utils/teacherHelper.js';
+import { geminiAIService } from '../services/GeminiAIService.js';
 
 // @desc    Create new activity
 // @route   POST /api/activities
@@ -201,6 +202,54 @@ export const getTeacherActivities = async (req, res, next) => {
     });
   } catch (error) {
     logger.error(`Error fetching teacher activities: ${error.message}`);
+    next(error);
+  }
+};
+
+// @desc    Generate AI questions/prompts for activity
+// @route   POST /api/activities/generate-questions
+// @access  Private/Teacher
+export const generateAIQuestions = async (req, res, next) => {
+  try {
+    const { activityType, topic, questionCount = 5, targetLevel = 'B1' } = req.body;
+
+    if (!activityType || !topic) {
+      return res.status(400).json({
+        success: false,
+        message: 'Activity type and topic are required',
+      });
+    }
+
+    let generated;
+    if (activityType === 'quiz') {
+      generated = await geminiAIService.generateQuestions(
+        activityType,
+        targetLevel,
+        topic,
+        questionCount
+      );
+    } else {
+      generated = await geminiAIService.generateActivityPrompt(
+        activityType,
+        targetLevel,
+        topic
+      );
+    }
+
+    logger.info(`AI generated ${activityType} content for ${targetLevel} level by user ${req.user._id}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Content generated successfully',
+      data: {
+        generated,
+        targetLevel,
+        activityType,
+        topic
+      },
+    });
+  } catch (error) {
+    logger.error(`Error generating AI questions: ${error.message}`);
     next(error);
   }
 };

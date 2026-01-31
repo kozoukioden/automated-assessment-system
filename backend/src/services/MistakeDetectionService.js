@@ -1,6 +1,7 @@
 import Mistake from '../models/Mistake.js';
 import Evaluation from '../models/Evaluation.js';
 import Submission from '../models/Submission.js';
+import Student from '../models/Student.js';
 import { geminiAIService } from './GeminiAIService.js';
 import { ERROR_TYPES, SEVERITY_LEVELS } from '../config/constants.js';
 import { logger } from '../utils/logger.js';
@@ -22,15 +23,27 @@ class MistakeDetectionService {
       }
 
       const submission = evaluation.submissionId;
+
+      // Fetch student's English level
+      let englishLevel = 'B1'; // Default
+      try {
+        const student = await Student.findOne({ userId: submission.studentId });
+        if (student && student.englishLevel) {
+          englishLevel = student.englishLevel;
+        }
+      } catch (err) {
+        logger.warn(`Could not fetch student level: ${err.message}, using default B1`);
+      }
+
       let mistakes = [];
 
       // Detect mistakes based on content type using Gemini
       switch (submission.contentType) {
         case 'speaking':
-          mistakes = await this.detectSpeakingMistakes(submission, evaluation);
+          mistakes = await this.detectSpeakingMistakes(submission, evaluation, englishLevel);
           break;
         case 'writing':
-          mistakes = await this.detectWritingMistakes(submission, evaluation);
+          mistakes = await this.detectWritingMistakes(submission, evaluation, englishLevel);
           break;
         case 'quiz':
           mistakes = await this.detectQuizMistakes(submission, evaluation);
@@ -60,8 +73,11 @@ class MistakeDetectionService {
 
   /**
    * Detect speaking mistakes using Gemini AI
+   * @param {object} submission - The submission object
+   * @param {object} evaluation - The evaluation object
+   * @param {string} englishLevel - Student's CEFR level
    */
-  async detectSpeakingMistakes(submission, evaluation) {
+  async detectSpeakingMistakes(submission, evaluation, englishLevel = 'B1') {
     const transcript = submission.content.transcript || '';
 
     if (!transcript) {
@@ -70,8 +86,8 @@ class MistakeDetectionService {
     }
 
     try {
-      // Use Gemini for speaking mistake detection
-      const geminiMistakes = await geminiAIService.detectMistakes(transcript, 'speaking');
+      // Use Gemini for speaking mistake detection with student level
+      const geminiMistakes = await geminiAIService.detectMistakes(transcript, 'speaking', englishLevel);
 
       return geminiMistakes.map(error => ({
         errorType: this.mapErrorType(error.errorType),
@@ -91,13 +107,16 @@ class MistakeDetectionService {
 
   /**
    * Detect writing mistakes using Gemini AI
+   * @param {object} submission - The submission object
+   * @param {object} evaluation - The evaluation object
+   * @param {string} englishLevel - Student's CEFR level
    */
-  async detectWritingMistakes(submission, evaluation) {
+  async detectWritingMistakes(submission, evaluation, englishLevel = 'B1') {
     const text = submission.content.text;
 
     try {
-      // Use Gemini for writing mistake detection
-      const geminiMistakes = await geminiAIService.detectMistakes(text, 'writing');
+      // Use Gemini for writing mistake detection with student level
+      const geminiMistakes = await geminiAIService.detectMistakes(text, 'writing', englishLevel);
 
       return geminiMistakes.map(error => ({
         errorType: this.mapErrorType(error.errorType),

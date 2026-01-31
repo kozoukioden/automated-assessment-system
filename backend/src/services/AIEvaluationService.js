@@ -1,5 +1,6 @@
 import Evaluation from '../models/Evaluation.js';
 import Submission from '../models/Submission.js';
+import Student from '../models/Student.js';
 import EvaluationRepository from '../repositories/EvaluationRepository.js';
 import SubmissionRepository from '../repositories/SubmissionRepository.js';
 import MistakeDetectionService from './MistakeDetectionService.js';
@@ -28,18 +29,30 @@ class AIEvaluationService {
         throw new Error('Submission not found');
       }
 
+      // Fetch student's English level for personalized evaluation
+      let englishLevel = 'B1'; // Default
+      try {
+        const student = await Student.findOne({ userId: submission.studentId });
+        if (student && student.englishLevel) {
+          englishLevel = student.englishLevel;
+          logger.info(`Evaluating submission for ${englishLevel} level student`);
+        }
+      } catch (err) {
+        logger.warn(`Could not fetch student level: ${err.message}, using default B1`);
+      }
+
       let evaluationData;
 
       // Route to appropriate evaluation based on content type
       switch (submission.contentType) {
         case 'speaking':
-          evaluationData = await this.evaluateSpeaking(submission);
+          evaluationData = await this.evaluateSpeaking(submission, englishLevel);
           break;
         case 'writing':
-          evaluationData = await this.evaluateWriting(submission);
+          evaluationData = await this.evaluateWriting(submission, englishLevel);
           break;
         case 'quiz':
-          evaluationData = await this.evaluateQuiz(submission);
+          evaluationData = await this.evaluateQuiz(submission, englishLevel);
           break;
         default:
           throw new Error(`Unknown content type: ${submission.contentType}`);
@@ -78,8 +91,10 @@ class AIEvaluationService {
 
   /**
    * Evaluate speaking submission using Gemini AI
+   * @param {object} submission - The submission object
+   * @param {string} englishLevel - Student's CEFR level
    */
-  async evaluateSpeaking(submission) {
+  async evaluateSpeaking(submission, englishLevel = 'B1') {
     const content = submission.content;
     const transcript = content.transcript || '';
 
@@ -96,11 +111,12 @@ class AIEvaluationService {
     }
 
     try {
-      // Use Gemini AI for evaluation
+      // Use Gemini AI for evaluation with student's level
       const geminiResult = await geminiAIService.evaluateSubmission(
         transcript || `Audio submission (duration: ${content.duration} seconds)`,
         'speaking',
-        rubric
+        rubric,
+        englishLevel
       );
 
       return {
@@ -111,7 +127,8 @@ class AIEvaluationService {
         aiConfidence: geminiResult.aiConfidence,
         evaluatedAt: new Date(),
         aiProvider: 'gemini',
-        aiModel: 'gemini-pro',
+        aiModel: 'gemini-1.5-flash',
+        studentLevel: englishLevel,
         scoreBreakdown: {
           fluency: geminiResult.structureScore,
           clarity: geminiResult.clarityScore,
@@ -127,8 +144,10 @@ class AIEvaluationService {
 
   /**
    * Evaluate writing submission using Gemini AI
+   * @param {object} submission - The submission object
+   * @param {string} englishLevel - Student's CEFR level
    */
-  async evaluateWriting(submission) {
+  async evaluateWriting(submission, englishLevel = 'B1') {
     const text = submission.content.text;
     const wordCount = submission.content.wordCount;
 
@@ -145,11 +164,12 @@ class AIEvaluationService {
     }
 
     try {
-      // Use Gemini AI for evaluation
+      // Use Gemini AI for evaluation with student's level
       const geminiResult = await geminiAIService.evaluateSubmission(
         text,
         'writing',
-        rubric
+        rubric,
+        englishLevel
       );
 
       return {
@@ -159,7 +179,8 @@ class AIEvaluationService {
         aiConfidence: geminiResult.aiConfidence,
         evaluatedAt: new Date(),
         aiProvider: 'gemini',
-        aiModel: 'gemini-pro',
+        aiModel: 'gemini-1.5-flash',
+        studentLevel: englishLevel,
         scoreBreakdown: {
           structure: geminiResult.structureScore,
           coherence: geminiResult.clarityScore,
@@ -177,8 +198,10 @@ class AIEvaluationService {
   /**
    * Evaluate quiz submission
    * Uses exact matching for objective questions, Gemini for short-answer
+   * @param {object} submission - The submission object
+   * @param {string} englishLevel - Student's CEFR level
    */
-  async evaluateQuiz(submission) {
+  async evaluateQuiz(submission, englishLevel = 'B1') {
     const activity = await submission.populate('activityId');
     const questions = activity.activityId.questions;
     const answers = submission.content.answers;
@@ -230,7 +253,8 @@ class AIEvaluationService {
       aiConfidence: 0.95,
       evaluatedAt: new Date(),
       aiProvider: 'gemini',
-      aiModel: 'gemini-pro',
+      aiModel: 'gemini-1.5-flash',
+      studentLevel: englishLevel,
       scoreBreakdown: {
         correctAnswers: correctCount,
         partialCredit: partialCount,

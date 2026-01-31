@@ -414,6 +414,21 @@ const SubmissionResults = () => {
                     </Grid>
                   )}
                 </Grid>
+
+                {/* Next Steps */}
+                {feedback.nextSteps && (
+                  <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.50', borderRadius: 1, borderLeft: 4, borderColor: 'primary.main' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <TrendingUpIcon color="primary" sx={{ mr: 1 }} />
+                      <Typography variant="subtitle1" color="primary.main" fontWeight="bold">
+                        Next Steps to Progress
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2">
+                      {feedback.nextSteps}
+                    </Typography>
+                  </Box>
+                )}
               </CustomCard>
             )}
 

@@ -9,12 +9,15 @@ import {
   IconButton,
   Divider,
   Paper,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Save as SaveIcon,
   ArrowBack as ArrowBackIcon,
+  AutoAwesome as AutoAwesomeIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
@@ -83,6 +86,11 @@ const CreateActivity = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [rubrics, setRubrics] = useState([]);
+
+  // AI Generation State
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationTopic, setGenerationTopic] = useState('');
+  const [targetLevel, setTargetLevel] = useState('B1');
 
   const {
     control,
@@ -200,6 +208,49 @@ const CreateActivity = () => {
       toast.error(err.response?.data?.message || 'Failed to save activity');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // AI Question/Prompt Generation Handler
+  const handleGenerateWithAI = async () => {
+    if (!generationTopic.trim()) {
+      toast.error('Please enter a topic for AI generation');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await api.post('/activities/generate-questions', {
+        activityType,
+        topic: generationTopic,
+        questionCount: 5,
+        targetLevel,
+      });
+
+      if (response.data?.data?.generated) {
+        const generated = response.data.data.generated;
+
+        if (activityType === 'quiz') {
+          // Clear existing questions and add AI-generated ones
+          setValue('questions', generated.map((q) => ({
+            questionText: q.questionText,
+            questionType: q.questionType || 'multiple-choice',
+            options: q.options || ['', '', '', ''],
+            correctAnswer: q.correctAnswer,
+            points: q.points || 1,
+          })));
+          toast.success(`Generated ${generated.length} questions successfully!`);
+        } else {
+          // Set prompt for speaking/writing
+          setValue('prompt', generated.prompt || '');
+          toast.success('Prompt generated successfully!');
+        }
+      }
+    } catch (err) {
+      console.error('Error generating with AI:', err);
+      toast.error(err.response?.data?.message || 'Failed to generate content with AI');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -386,6 +437,62 @@ const CreateActivity = () => {
               />
             </Grid>
           </Grid>
+        </CustomCard>
+
+        {/* AI Content Generator */}
+        <CustomCard title="AI Content Generator" sx={{ mt: 3 }}>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Use AI to automatically generate {activityType === 'quiz' ? 'questions' : 'prompts'} based on your topic and target student level.
+          </Alert>
+          <Grid container spacing={2} alignItems="flex-end">
+            <Grid item xs={12} md={5}>
+              <TextField
+                fullWidth
+                label="Topic for AI Generation"
+                value={generationTopic}
+                onChange={(e) => setGenerationTopic(e.target.value)}
+                placeholder={
+                  activityType === 'quiz'
+                    ? 'e.g., Past tense verbs, Food vocabulary, Travel situations'
+                    : 'e.g., Environmental protection, My favorite hobby, Technology in education'
+                }
+                helperText="Enter a topic or theme for the AI to base the content on"
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                select
+                fullWidth
+                label="Target Student Level"
+                value={targetLevel}
+                onChange={(e) => setTargetLevel(e.target.value)}
+                helperText="CEFR level"
+              >
+                <MenuItem value="A1">A1 - Beginner</MenuItem>
+                <MenuItem value="A2">A2 - Elementary</MenuItem>
+                <MenuItem value="B1">B1 - Intermediate</MenuItem>
+                <MenuItem value="B2">B2 - Upper Intermediate</MenuItem>
+                <MenuItem value="C1">C1 - Advanced</MenuItem>
+                <MenuItem value="C2">C2 - Proficient</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Button
+                fullWidth
+                variant="contained"
+                color="secondary"
+                onClick={handleGenerateWithAI}
+                disabled={isGenerating || !generationTopic.trim()}
+                startIcon={isGenerating ? <CircularProgress size={20} color="inherit" /> : <AutoAwesomeIcon />}
+                sx={{ height: 56 }}
+              >
+                {isGenerating ? 'Generating...' : `Generate ${activityType === 'quiz' ? 'Questions' : 'Prompt'} with AI`}
+              </Button>
+            </Grid>
+          </Grid>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+            AI will generate content appropriate for the selected CEFR level. You can edit the generated content afterwards.
+          </Typography>
         </CustomCard>
 
         {/* Prompt for Speaking/Writing Activities */}

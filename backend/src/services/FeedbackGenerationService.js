@@ -2,6 +2,7 @@ import Feedback from '../models/Feedback.js';
 import Evaluation from '../models/Evaluation.js';
 import Mistake from '../models/Mistake.js';
 import Submission from '../models/Submission.js';
+import Student from '../models/Student.js';
 import FeedbackRepository from '../repositories/FeedbackRepository.js';
 import NotificationService from './NotificationService.js';
 import { geminiAIService } from './GeminiAIService.js';
@@ -26,18 +27,29 @@ class FeedbackGenerationService {
       const submission = evaluation.submissionId;
       const mistakes = await Mistake.find({ evaluationId });
 
+      // Fetch student's English level
+      let englishLevel = 'B1'; // Default
+      try {
+        const student = await Student.findOne({ userId: submission.studentId });
+        if (student && student.englishLevel) {
+          englishLevel = student.englishLevel;
+        }
+      } catch (err) {
+        logger.warn(`Could not fetch student level: ${err.message}, using default B1`);
+      }
+
       // Generate feedback based on content type using Gemini
       let feedbackData;
 
       switch (submission.contentType) {
         case 'speaking':
-          feedbackData = await this.generateSpeakingFeedback(evaluation, mistakes, submission);
+          feedbackData = await this.generateSpeakingFeedback(evaluation, mistakes, submission, englishLevel);
           break;
         case 'writing':
-          feedbackData = await this.generateWritingFeedback(evaluation, mistakes, submission);
+          feedbackData = await this.generateWritingFeedback(evaluation, mistakes, submission, englishLevel);
           break;
         case 'quiz':
-          feedbackData = await this.generateQuizFeedback(evaluation, mistakes, submission);
+          feedbackData = await this.generateQuizFeedback(evaluation, mistakes, submission, englishLevel);
           break;
         default:
           throw new Error(`Unknown content type: ${submission.contentType}`);
@@ -65,14 +77,19 @@ class FeedbackGenerationService {
 
   /**
    * Generate speaking feedback using Gemini AI
+   * @param {object} evaluation - The evaluation object
+   * @param {array} mistakes - List of detected mistakes
+   * @param {object} submission - The submission object
+   * @param {string} englishLevel - Student's CEFR level
    */
-  async generateSpeakingFeedback(evaluation, mistakes, submission) {
+  async generateSpeakingFeedback(evaluation, mistakes, submission, englishLevel = 'B1') {
     try {
-      // Use Gemini for feedback generation
+      // Use Gemini for feedback generation with student level
       const geminiFeedback = await geminiAIService.generateFeedback(
         evaluation,
         mistakes,
-        'speaking'
+        'speaking',
+        englishLevel
       );
 
       return {
@@ -80,6 +97,7 @@ class FeedbackGenerationService {
         strengths: geminiFeedback.strengths,
         improvements: geminiFeedback.improvements,
         recommendations: geminiFeedback.recommendations,
+        nextSteps: geminiFeedback.nextSteps || '',
         isSummarized: false,
         tone: geminiFeedback.tone,
         aiGenerated: true,
@@ -92,14 +110,19 @@ class FeedbackGenerationService {
 
   /**
    * Generate writing feedback using Gemini AI
+   * @param {object} evaluation - The evaluation object
+   * @param {array} mistakes - List of detected mistakes
+   * @param {object} submission - The submission object
+   * @param {string} englishLevel - Student's CEFR level
    */
-  async generateWritingFeedback(evaluation, mistakes, submission) {
+  async generateWritingFeedback(evaluation, mistakes, submission, englishLevel = 'B1') {
     try {
-      // Use Gemini for feedback generation
+      // Use Gemini for feedback generation with student level
       const geminiFeedback = await geminiAIService.generateFeedback(
         evaluation,
         mistakes,
-        'writing'
+        'writing',
+        englishLevel
       );
 
       return {
@@ -107,6 +130,7 @@ class FeedbackGenerationService {
         strengths: geminiFeedback.strengths,
         improvements: geminiFeedback.improvements,
         recommendations: geminiFeedback.recommendations,
+        nextSteps: geminiFeedback.nextSteps || '',
         isSummarized: false,
         tone: geminiFeedback.tone,
         aiGenerated: true,
@@ -119,14 +143,19 @@ class FeedbackGenerationService {
 
   /**
    * Generate quiz feedback using Gemini AI
+   * @param {object} evaluation - The evaluation object
+   * @param {array} mistakes - List of detected mistakes
+   * @param {object} submission - The submission object
+   * @param {string} englishLevel - Student's CEFR level
    */
-  async generateQuizFeedback(evaluation, mistakes, submission) {
+  async generateQuizFeedback(evaluation, mistakes, submission, englishLevel = 'B1') {
     try {
-      // Use Gemini for feedback generation
+      // Use Gemini for feedback generation with student level
       const geminiFeedback = await geminiAIService.generateFeedback(
         evaluation,
         mistakes,
-        'quiz'
+        'quiz',
+        englishLevel
       );
 
       return {
@@ -134,6 +163,7 @@ class FeedbackGenerationService {
         strengths: geminiFeedback.strengths,
         improvements: geminiFeedback.improvements,
         recommendations: geminiFeedback.recommendations,
+        nextSteps: geminiFeedback.nextSteps || '',
         isSummarized: true,
         tone: geminiFeedback.tone,
         aiGenerated: true,

@@ -41,10 +41,19 @@ const feedbackSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    nextSteps: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     tone: {
       type: String,
       enum: ['encouraging', 'constructive', 'neutral'],
       default: 'constructive',
+    },
+    aiGenerated: {
+      type: Boolean,
+      default: true,
     },
   },
   {

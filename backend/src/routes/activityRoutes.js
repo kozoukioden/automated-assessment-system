@@ -6,6 +6,7 @@ import {
   updateActivity,
   deleteActivity,
   getTeacherActivities,
+  generateAIQuestions,
 } from '../controllers/activityController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { getOrCreateTeacherProfile } from '../utils/teacherHelper.js';
@@ -32,6 +33,9 @@ router.get('/teacher/:teacherId', protect, authorize('teacher', 'admin'), getTea
 
 // Get single activity by ID (MUST be last among GET routes)
 router.get('/:id', protect, getActivityById);
+
+// Generate AI questions/prompts (MUST be before /:id routes)
+router.post('/generate-questions', protect, authorize('teacher', 'admin'), generateAIQuestions);
 
 // Create activity
 router.post('/', protect, authorize('teacher', 'admin'), createActivity);
