@@ -9,7 +9,7 @@ import { AppError } from '../middleware/errorMiddleware.js';
 import { logger } from '../utils/logger.js';
 
 /**
- * @desc    Get evaluation by ID
+ * @desc    Get evaluation by ID (includes mistakes and feedback)
  * @route   GET /api/evaluations/:id
  * @access  Private
  */
@@ -20,11 +20,25 @@ export const getEvaluation = asyncHandler(async (req, res) => {
     throw new AppError('Evaluation not found', HTTP_STATUS.NOT_FOUND);
   }
 
-  res.status(HTTP_STATUS.OK).json(formatSuccessResponse({ evaluation }));
+  // Fetch associated mistakes
+  const Mistake = (await import('../models/Mistake.js')).default;
+  const mistakes = await Mistake.find({ evaluationId: evaluation._id }).sort({ severity: 1 });
+
+  // Fetch associated feedback
+  const Feedback = (await import('../models/Feedback.js')).default;
+  const feedback = await Feedback.findOne({ evaluationId: evaluation._id });
+
+  res.status(HTTP_STATUS.OK).json(
+    formatSuccessResponse({
+      evaluation,
+      mistakes: mistakes || [],
+      feedback: feedback || null,
+    })
+  );
 });
 
 /**
- * @desc    Get evaluation by submission ID
+ * @desc    Get evaluation by submission ID (includes mistakes and feedback)
  * @route   GET /api/evaluations/submission/:submissionId
  * @access  Private
  */
@@ -35,7 +49,21 @@ export const getEvaluationBySubmission = asyncHandler(async (req, res) => {
     throw new AppError('Evaluation not found for this submission', HTTP_STATUS.NOT_FOUND);
   }
 
-  res.status(HTTP_STATUS.OK).json(formatSuccessResponse({ evaluation }));
+  // Fetch associated mistakes
+  const Mistake = (await import('../models/Mistake.js')).default;
+  const mistakes = await Mistake.find({ evaluationId: evaluation._id }).sort({ severity: 1 });
+
+  // Fetch associated feedback
+  const Feedback = (await import('../models/Feedback.js')).default;
+  const feedback = await Feedback.findOne({ evaluationId: evaluation._id });
+
+  res.status(HTTP_STATUS.OK).json(
+    formatSuccessResponse({
+      evaluation,
+      mistakes: mistakes || [],
+      feedback: feedback || null,
+    })
+  );
 });
 
 /**

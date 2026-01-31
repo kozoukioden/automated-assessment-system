@@ -18,6 +18,14 @@ const studentSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    englishLevel: {
+      type: String,
+      enum: {
+        values: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
+        message: '{VALUE} is not a valid CEFR level',
+      },
+      default: 'B1',
+    },
     preferences: {
       notificationEnabled: {
         type: Boolean,

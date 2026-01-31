@@ -78,6 +78,13 @@ export const ENDPOINTS = {
     MARK_ALL_READ: '/notifications/read-all',
     DELETE: (id) => `/notifications/${id}`,
   },
+
+  // Students
+  STUDENTS: {
+    ME: '/students/me',
+    UPDATE_LEVEL: '/students/me/english-level',
+    UPDATE_PREFERENCES: '/students/me/preferences',
+  },
 };
 
 // User Roles
@@ -118,6 +125,16 @@ export const SEVERITY_LEVELS = {
   MAJOR: 'major',
   MINOR: 'minor',
 };
+
+// CEFR English Levels
+export const CEFR_LEVELS = [
+  { value: 'A1', label: 'A1 - Beginner', description: 'Can understand and use basic phrases' },
+  { value: 'A2', label: 'A2 - Elementary', description: 'Can communicate in simple tasks' },
+  { value: 'B1', label: 'B1 - Intermediate', description: 'Can deal with most travel situations' },
+  { value: 'B2', label: 'B2 - Upper Intermediate', description: 'Can interact with fluency' },
+  { value: 'C1', label: 'C1 - Advanced', description: 'Can express ideas fluently and spontaneously' },
+  { value: 'C2', label: 'C2 - Proficient', description: 'Can understand virtually everything' },
+];
 
 // Notification Types
 export const NOTIFICATION_TYPES = {

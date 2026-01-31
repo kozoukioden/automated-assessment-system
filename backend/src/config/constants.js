@@ -32,6 +32,24 @@ export const SEVERITY_LEVELS = {
   MINOR: 'minor',
 };
 
+export const CEFR_LEVELS = {
+  A1: 'A1', // Beginner
+  A2: 'A2', // Elementary
+  B1: 'B1', // Intermediate
+  B2: 'B2', // Upper Intermediate
+  C1: 'C1', // Advanced
+  C2: 'C2', // Proficient
+};
+
+export const CEFR_LEVEL_DESCRIPTIONS = {
+  A1: 'Beginner - Can understand and use basic phrases',
+  A2: 'Elementary - Can communicate in simple tasks',
+  B1: 'Intermediate - Can deal with most travel situations',
+  B2: 'Upper Intermediate - Can interact with fluency',
+  C1: 'Advanced - Can express ideas fluently and spontaneously',
+  C2: 'Proficient - Can understand virtually everything',
+};
+
 export const NOTIFICATION_TYPES = {
   EVALUATION_COMPLETED: 'evaluation_completed',
   FEEDBACK_READY: 'feedback_ready',
@@ -93,6 +111,8 @@ export default {
   SUBMISSION_STATUS,
   ERROR_TYPES,
   SEVERITY_LEVELS,
+  CEFR_LEVELS,
+  CEFR_LEVEL_DESCRIPTIONS,
   NOTIFICATION_TYPES,
   AUDIT_ACTIONS,
   HTTP_STATUS,

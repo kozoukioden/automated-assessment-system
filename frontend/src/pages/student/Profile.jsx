@@ -12,6 +12,7 @@ import {
   Alert,
   InputAdornment,
   IconButton,
+  MenuItem,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -24,6 +25,7 @@ import {
   Assessment as AssessmentIcon,
   Star as StarIcon,
   AccountCircle as AccountCircleIcon,
+  School as SchoolIcon,
 } from '@mui/icons-material';
 import StudentLayout from '../../components/common/Layout/StudentLayout';
 import CustomCard from '../../components/common/UI/CustomCard';
@@ -32,7 +34,7 @@ import ErrorMessage from '../../components/common/UI/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import useAuth from '../../hooks/useAuth';
 import api from '../../services/api';
-import { ENDPOINTS } from '../../config/env';
+import { ENDPOINTS, CEFR_LEVELS } from '../../config/env';
 import { format } from 'date-fns';
 
 /**
@@ -63,6 +65,7 @@ const Profile = () => {
   });
   const [successMessage, setSuccessMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [englishLevel, setEnglishLevel] = useState('B1');
 
   // Initialize profile data
   useEffect(() => {
@@ -72,8 +75,19 @@ const Profile = () => {
         email: user.email || '',
       });
       fetchProfileStats();
+      fetchStudentProfile();
     }
   }, [user]);
+
+  const fetchStudentProfile = async () => {
+    const result = await execute(
+      () => api.get(ENDPOINTS.STUDENTS.ME),
+      { showErrorToast: false }
+    );
+    if (result.success && result.data?.student) {
+      setEnglishLevel(result.data.student.englishLevel || 'B1');
+    }
+  };
 
   const fetchProfileStats = async () => {
     // Fetch user submissions to calculate stats
@@ -121,6 +135,25 @@ const Profile = () => {
       ...prev,
       [field]: !prev[field],
     }));
+  };
+
+  const handleEnglishLevelChange = async (e) => {
+    const newLevel = e.target.value;
+    setEnglishLevel(newLevel);
+
+    const result = await execute(
+      () => api.put(ENDPOINTS.STUDENTS.UPDATE_LEVEL, { englishLevel: newLevel }),
+      {
+        showSuccessToast: true,
+        successMessage: 'English level updated successfully!',
+        showErrorToast: true,
+      }
+    );
+
+    if (!result.success) {
+      // Revert to previous level on error
+      fetchStudentProfile();
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -318,6 +351,30 @@ const Profile = () => {
                   />
                 </Grid>
 
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="English Level (CEFR)"
+                    value={englishLevel}
+                    onChange={handleEnglishLevelChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SchoolIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                    helperText="Your English proficiency level affects activity difficulty and AI evaluation"
+                  >
+                    {CEFR_LEVELS.map((level) => (
+                      <MenuItem key={level.value} value={level.value}>
+                        {level.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+
                 <Grid item xs={12}>
                   <Button
                     variant="contained"
@@ -499,6 +556,23 @@ const Profile = () => {
                     </Box>
                     <Typography variant="h6" color="warning.main">
                       {profileStats.bestScore.toFixed(1)}%
+                    </Typography>
+                  </CardContent>
+                </Card>
+
+                <Card variant="outlined">
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <SchoolIcon color="info" sx={{ mr: 1 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        English Level
+                      </Typography>
+                    </Box>
+                    <Typography variant="h6" color="info.main">
+                      {englishLevel}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {CEFR_LEVELS.find((l) => l.value === englishLevel)?.description || ''}
                     </Typography>
                   </CardContent>
                 </Card>
