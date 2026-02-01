@@ -127,7 +127,7 @@ class AIEvaluationService {
         aiConfidence: geminiResult.aiConfidence,
         evaluatedAt: new Date(),
         aiProvider: 'gemini',
-        aiModel: 'gemini-1.5-flash',
+        aiModel: 'gemini-2.0-flash',
         studentLevel: englishLevel,
         scoreBreakdown: {
           fluency: geminiResult.structureScore,
@@ -179,7 +179,7 @@ class AIEvaluationService {
         aiConfidence: geminiResult.aiConfidence,
         evaluatedAt: new Date(),
         aiProvider: 'gemini',
-        aiModel: 'gemini-1.5-flash',
+        aiModel: 'gemini-2.0-flash',
         studentLevel: englishLevel,
         scoreBreakdown: {
           structure: geminiResult.structureScore,
@@ -253,7 +253,7 @@ class AIEvaluationService {
       aiConfidence: 0.95,
       evaluatedAt: new Date(),
       aiProvider: 'gemini',
-      aiModel: 'gemini-1.5-flash',
+      aiModel: 'gemini-2.0-flash',
       studentLevel: englishLevel,
       scoreBreakdown: {
         correctAnswers: correctCount,
