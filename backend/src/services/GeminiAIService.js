@@ -467,11 +467,24 @@ Return ONLY valid JSON (no markdown, no code blocks):
 
   parseEvaluationResponse(response, contentType) {
     try {
-      // Remove any markdown code blocks if present
-      const cleanedResponse = response
+      // Clean the response - remove markdown, control characters
+      let cleanedResponse = response
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
+
+      // Find JSON object in response
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedResponse = jsonMatch[0];
+      }
+
+      // Remove control characters that break JSON parsing
+      cleanedResponse = cleanedResponse
+        .replace(/[\x00-\x1F\x7F]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']');
 
       const parsed = JSON.parse(cleanedResponse);
 
@@ -507,10 +520,21 @@ Return ONLY valid JSON (no markdown, no code blocks):
 
   parseMistakesResponse(response) {
     try {
-      const cleanedResponse = response
+      let cleanedResponse = response
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
+
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedResponse = jsonMatch[0];
+      }
+
+      cleanedResponse = cleanedResponse
+        .replace(/[\x00-\x1F\x7F]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']');
 
       const parsed = JSON.parse(cleanedResponse);
 
@@ -532,10 +556,21 @@ Return ONLY valid JSON (no markdown, no code blocks):
 
   parseChallengesResponse(response) {
     try {
-      const cleanedResponse = response
+      let cleanedResponse = response
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
+
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedResponse = jsonMatch[0];
+      }
+
+      cleanedResponse = cleanedResponse
+        .replace(/[\x00-\x1F\x7F]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']');
 
       const parsed = JSON.parse(cleanedResponse);
 
@@ -554,10 +589,21 @@ Return ONLY valid JSON (no markdown, no code blocks):
 
   parseFeedbackResponse(response) {
     try {
-      const cleanedResponse = response
+      let cleanedResponse = response
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
+
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedResponse = jsonMatch[0];
+      }
+
+      cleanedResponse = cleanedResponse
+        .replace(/[\x00-\x1F\x7F]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']');
 
       const parsed = JSON.parse(cleanedResponse);
 
@@ -586,10 +632,24 @@ Return ONLY valid JSON (no markdown, no code blocks):
 
   parseQuestionsResponse(response, activityType) {
     try {
-      const cleanedResponse = response
+      // Clean the response - remove markdown, control characters
+      let cleanedResponse = response
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
+
+      // Find JSON object in response
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedResponse = jsonMatch[0];
+      }
+
+      // Remove control characters that break JSON parsing
+      cleanedResponse = cleanedResponse
+        .replace(/[\x00-\x1F\x7F]/g, ' ')  // Replace control chars with space
+        .replace(/\s+/g, ' ')              // Collapse multiple spaces
+        .replace(/,\s*}/g, '}')            // Remove trailing commas
+        .replace(/,\s*]/g, ']');           // Remove trailing commas in arrays
 
       const parsed = JSON.parse(cleanedResponse);
 
@@ -631,10 +691,24 @@ Return ONLY valid JSON (no markdown, no code blocks):
 
   parseActivityPromptResponse(response) {
     try {
-      const cleanedResponse = response
+      // Clean the response - remove markdown, control characters
+      let cleanedResponse = response
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
+
+      // Find JSON object in response
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedResponse = jsonMatch[0];
+      }
+
+      // Remove control characters that break JSON parsing
+      cleanedResponse = cleanedResponse
+        .replace(/[\x00-\x1F\x7F]/g, ' ')  // Replace control chars with space
+        .replace(/\s+/g, ' ')              // Collapse multiple spaces
+        .replace(/,\s*}/g, '}')            // Remove trailing commas
+        .replace(/,\s*]/g, ']');           // Remove trailing commas in arrays
 
       const parsed = JSON.parse(cleanedResponse);
 
