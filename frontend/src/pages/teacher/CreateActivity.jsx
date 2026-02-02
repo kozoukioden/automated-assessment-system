@@ -227,8 +227,9 @@ const CreateActivity = () => {
         targetLevel,
       });
 
-      if (response.data?.data?.generated) {
-        const generated = response.data.data.generated;
+      // Note: api interceptor returns response.data directly, so structure is response.data.generated
+      if (response?.data?.generated) {
+        const generated = response.data.generated;
 
         if (activityType === 'quiz') {
           // Clear existing questions and add AI-generated ones using replaceQuestions
