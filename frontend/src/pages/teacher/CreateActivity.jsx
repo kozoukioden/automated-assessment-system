@@ -113,7 +113,7 @@ const CreateActivity = () => {
     },
   });
 
-  const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({
+  const { fields: questionFields, append: appendQuestion, remove: removeQuestion, replace: replaceQuestions } = useFieldArray({
     control,
     name: 'questions',
   });
@@ -231,14 +231,15 @@ const CreateActivity = () => {
         const generated = response.data.data.generated;
 
         if (activityType === 'quiz') {
-          // Clear existing questions and add AI-generated ones
-          setValue('questions', generated.map((q) => ({
+          // Clear existing questions and add AI-generated ones using replaceQuestions
+          const newQuestions = generated.map((q) => ({
             questionText: q.questionText,
             questionType: q.questionType || 'multiple-choice',
             options: q.options || ['', '', '', ''],
             correctAnswer: q.correctAnswer,
             points: q.points || 1,
-          })));
+          }));
+          replaceQuestions(newQuestions);
           toast.success(`Generated ${generated.length} questions successfully!`);
         } else {
           // Set prompt for speaking/writing
