@@ -556,6 +556,7 @@ const CreateActivity = () => {
                         render={({ field }) => (
                           <TextField
                             {...field}
+                            value={field.value || ''}
                             label="Question Text"
                             fullWidth
                             multiline
