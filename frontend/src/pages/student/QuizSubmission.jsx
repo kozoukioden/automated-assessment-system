@@ -300,7 +300,7 @@ const QuizSubmission = () => {
                   >
                     <FormControl component="fieldset" fullWidth>
                       <FormLabel component="legend" sx={{ mb: 2 }}>
-                        <Typography variant="body1">{question.question}</Typography>
+                        <Typography variant="body1">{question.questionText || question.question}</Typography>
                       </FormLabel>
                       <RadioGroup
                         value={answers[index] || ''}
@@ -336,7 +336,7 @@ const QuizSubmission = () => {
                 <FormControl component="fieldset" fullWidth>
                   <FormLabel component="legend" sx={{ mb: 2 }}>
                     <Typography variant="body1">
-                      {questions[currentQuestion]?.question}
+                      {questions[currentQuestion]?.questionText || questions[currentQuestion]?.question}
                     </Typography>
                   </FormLabel>
                   <RadioGroup
