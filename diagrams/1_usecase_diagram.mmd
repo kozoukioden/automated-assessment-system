@@ -1,0 +1,97 @@
+graph TB
+    subgraph "Automated Assessment System - Use Case Diagram"
+        direction TB
+
+        %% Actors
+        Teacher["<b style='font-size:18px;color:black;'>TEACHER</b>"]
+        Student["<b style='font-size:18px;color:black;'>STUDENT</b>"]
+        AI["<b style='font-size:18px;color:black;'>AI SYSTEM<br/>Gemma / Gemini</b>"]
+
+        %% Teacher Use Cases
+        UC1["<b style='font-size:14px;color:black;'>Create Activity<br/>Quiz / Writing / Speaking</b>"]
+        UC2["<b style='font-size:14px;color:black;'>Generate Questions<br/>with AI</b>"]
+        UC3["<b style='font-size:14px;color:black;'>Set CEFR Level<br/>A1 - C2</b>"]
+        UC4["<b style='font-size:14px;color:black;'>Create / Manage<br/>Rubric</b>"]
+        UC5["<b style='font-size:14px;color:black;'>View Student<br/>Submissions</b>"]
+        UC6["<b style='font-size:14px;color:black;'>Review AI<br/>Evaluations</b>"]
+        UC7["<b style='font-size:14px;color:black;'>Monitor Student<br/>Progress</b>"]
+
+        %% Student Use Cases
+        UC8["<b style='font-size:14px;color:black;'>View Available<br/>Activities</b>"]
+        UC9["<b style='font-size:14px;color:black;'>Take Quiz</b>"]
+        UC10["<b style='font-size:14px;color:black;'>Submit Writing</b>"]
+        UC11["<b style='font-size:14px;color:black;'>Submit Speaking<br/>Audio Recording</b>"]
+        UC12["<b style='font-size:14px;color:black;'>View AI Score<br/>and Evaluation</b>"]
+        UC13["<b style='font-size:14px;color:black;'>View Mistakes<br/>and Corrections</b>"]
+        UC14["<b style='font-size:14px;color:black;'>View Personalized<br/>Feedback</b>"]
+        UC15["<b style='font-size:14px;color:black;'>View Next Steps<br/>and Recommendations</b>"]
+
+        %% AI Use Cases
+        UC16["<b style='font-size:14px;color:black;'>Generate CEFR-Level<br/>Questions</b>"]
+        UC17["<b style='font-size:14px;color:black;'>Evaluate Submission<br/>Score 0-100</b>"]
+        UC18["<b style='font-size:14px;color:black;'>Detect Mistakes<br/>and Errors</b>"]
+        UC19["<b style='font-size:14px;color:black;'>Generate Personalized<br/>Feedback</b>"]
+        UC20["<b style='font-size:14px;color:black;'>Identify Learning<br/>Challenges</b>"]
+
+        %% Teacher connections
+        Teacher --> UC1
+        Teacher --> UC2
+        Teacher --> UC3
+        Teacher --> UC4
+        Teacher --> UC5
+        Teacher --> UC6
+        Teacher --> UC7
+
+        %% Student connections
+        Student --> UC8
+        Student --> UC9
+        Student --> UC10
+        Student --> UC11
+        Student --> UC12
+        Student --> UC13
+        Student --> UC14
+        Student --> UC15
+
+        %% AI connections
+        AI --> UC16
+        AI --> UC17
+        AI --> UC18
+        AI --> UC19
+        AI --> UC20
+
+        %% Include/Extend relationships
+        UC2 -.->|"<<include>>"| UC16
+        UC1 -.->|"<<extend>>"| UC2
+        UC9 -.->|"<<include>>"| UC17
+        UC10 -.->|"<<include>>"| UC17
+        UC11 -.->|"<<include>>"| UC17
+        UC17 -.->|"<<include>>"| UC18
+        UC17 -.->|"<<include>>"| UC19
+        UC12 -.->|"<<include>>"| UC17
+        UC13 -.->|"<<include>>"| UC18
+        UC14 -.->|"<<include>>"| UC19
+    end
+
+    style Teacher fill:#4CAF50,color:#000,stroke:#333,stroke-width:3px,font-size:18px,font-weight:bold
+    style Student fill:#2196F3,color:#000,stroke:#333,stroke-width:3px,font-size:18px,font-weight:bold
+    style AI fill:#FF9800,color:#000,stroke:#333,stroke-width:3px,font-size:18px,font-weight:bold
+    style UC1 fill:#C8E6C9,color:#000,stroke:#333,stroke-width:2px
+    style UC2 fill:#C8E6C9,color:#000,stroke:#333,stroke-width:2px
+    style UC3 fill:#C8E6C9,color:#000,stroke:#333,stroke-width:2px
+    style UC4 fill:#C8E6C9,color:#000,stroke:#333,stroke-width:2px
+    style UC5 fill:#C8E6C9,color:#000,stroke:#333,stroke-width:2px
+    style UC6 fill:#C8E6C9,color:#000,stroke:#333,stroke-width:2px
+    style UC7 fill:#C8E6C9,color:#000,stroke:#333,stroke-width:2px
+    style UC8 fill:#BBDEFB,color:#000,stroke:#333,stroke-width:2px
+    style UC9 fill:#BBDEFB,color:#000,stroke:#333,stroke-width:2px
+    style UC10 fill:#BBDEFB,color:#000,stroke:#333,stroke-width:2px
+    style UC11 fill:#BBDEFB,color:#000,stroke:#333,stroke-width:2px
+    style UC12 fill:#BBDEFB,color:#000,stroke:#333,stroke-width:2px
+    style UC13 fill:#BBDEFB,color:#000,stroke:#333,stroke-width:2px
+    style UC14 fill:#BBDEFB,color:#000,stroke:#333,stroke-width:2px
+    style UC15 fill:#BBDEFB,color:#000,stroke:#333,stroke-width:2px
+    style UC16 fill:#FFE0B2,color:#000,stroke:#333,stroke-width:2px
+    style UC17 fill:#FFE0B2,color:#000,stroke:#333,stroke-width:2px
+    style UC18 fill:#FFE0B2,color:#000,stroke:#333,stroke-width:2px
+    style UC19 fill:#FFE0B2,color:#000,stroke:#333,stroke-width:2px
+    style UC20 fill:#FFE0B2,color:#000,stroke:#333,stroke-width:2px

@@ -1,0 +1,78 @@
+sequenceDiagram
+    autonumber
+    title Sequence Diagram 2: Quiz Submission & AI Evaluation Flow
+
+    actor Student
+    participant Frontend as React Frontend<br/>(QuizSubmission.jsx)
+    participant API as Express.js API<br/>(submissionController)
+    participant EvalService as AIEvaluationService
+    participant MistakeService as MistakeDetectionService
+    participant FeedbackService as FeedbackGenerationService
+    participant AIService as GeminiAIService
+    participant Gemma as Gemma 3 4B IT<br/>(Google AI)
+    participant DB as MongoDB
+
+    Student->>Frontend: Open Quiz Activity
+    Frontend->>API: GET /api/activities/:id
+    API->>DB: Find Activity
+    DB-->>API: Activity with questions
+    API-->>Frontend: Activity data
+    Frontend-->>Student: Display quiz questions<br/>with options
+
+    Student->>Frontend: Answer all questions
+    Student->>Frontend: Click "Submit Quiz"
+
+    Frontend->>API: POST /api/submissions/quiz<br/>{activityId, content: {answers[]}}
+
+    API->>DB: Create Submission<br/>(status: "pending")
+    DB-->>API: Submission created
+
+    Note over API,DB: AI Evaluation Pipeline Starts
+
+    API->>EvalService: evaluateSubmission(submission)
+
+    EvalService->>DB: Find Student by userId
+    DB-->>EvalService: Student {englishLevel: "B1"}
+
+    EvalService->>AIService: evaluateSubmission(content, "quiz", rubric, "B1")
+    AIService->>Gemma: generateContent(evaluationPrompt)<br/>with B1 CEFR expectations
+    Gemma-->>AIService: {overallScore: 85, grammarScore: 80, ...}
+    AIService-->>EvalService: Evaluation results
+
+    EvalService->>DB: Save Evaluation
+
+    Note over API,DB: Mistake Detection
+
+    API->>MistakeService: detectMistakes(submission)
+    MistakeService->>DB: Find Student level
+    MistakeService->>AIService: detectMistakes(content, "quiz", "B1")
+    AIService->>Gemma: generateContent(mistakesPrompt)<br/>B1-appropriate error analysis
+    Gemma-->>AIService: {errors: [{type, severity, correction}]}
+    AIService-->>MistakeService: Detected mistakes
+
+    MistakeService->>DB: Save Mistakes
+
+    Note over API,DB: Feedback Generation
+
+    API->>FeedbackService: generateFeedback(submission, evaluation, mistakes)
+    FeedbackService->>DB: Find Student level
+    FeedbackService->>AIService: generateFeedback(eval, mistakes, "quiz", "B1")
+    AIService->>Gemma: generateContent(feedbackPrompt)<br/>Encouraging, B1-appropriate
+    Gemma-->>AIService: {feedbackText, strengths, improvements, nextSteps}
+    AIService-->>FeedbackService: Generated feedback
+
+    FeedbackService->>DB: Save Feedback
+
+    API->>DB: Update Submission<br/>(status: "evaluated")
+
+    API-->>Frontend: Submission result<br/>with evaluation ID
+
+    Frontend->>Frontend: Navigate to results page
+
+    Frontend->>API: GET /api/submissions/:id
+    API->>DB: Get Submission + Evaluation + Feedback + Mistakes
+    DB-->>API: Complete results
+
+    API-->>Frontend: Full evaluation data
+
+    Frontend-->>Student: Display:<br/>- AI Score (85/100)<br/>- Grammar/Vocabulary scores<br/>- Mistakes & corrections<br/>- Personalized feedback<br/>- Next steps for improvement

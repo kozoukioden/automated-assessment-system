@@ -1,0 +1,63 @@
+sequenceDiagram
+    autonumber
+    title Sequence Diagram 4: User Authentication & Token Refresh Flow
+
+    actor User
+    participant Frontend as React Frontend
+    participant Axios as Axios Interceptor<br/>(api.js)
+    participant API as Express.js API<br/>(authController)
+    participant Auth as Auth Middleware<br/>(JWT Verification)
+    participant DB as MongoDB
+
+    Note over User,DB: Registration Flow
+
+    User->>Frontend: Fill registration form<br/>(name, email, password, role)
+    Frontend->>API: POST /api/auth/register<br/>{firstName, lastName, email, password, role}
+    API->>API: Validate input<br/>Hash password (bcrypt)
+    API->>DB: Create User
+    DB-->>API: User created
+    API->>API: Generate JWT tokens<br/>(accessToken + refreshToken)
+    API-->>Frontend: {accessToken, refreshToken, user}
+    Frontend->>Frontend: Store tokens in localStorage
+    Frontend-->>User: Redirect to dashboard
+
+    Note over User,DB: Login Flow
+
+    User->>Frontend: Enter email & password
+    Frontend->>API: POST /api/auth/login<br/>{email, password}
+    API->>DB: Find user by email
+    DB-->>API: User data
+    API->>API: Compare password (bcrypt)
+    API->>API: Generate JWT tokens
+    API-->>Frontend: {accessToken, refreshToken, user}
+    Frontend->>Frontend: Store tokens in localStorage
+    Frontend-->>User: Redirect to dashboard
+
+    Note over User,DB: Authenticated Request with Token Refresh
+
+    User->>Frontend: Access protected page
+    Frontend->>Axios: Request with Bearer token
+    Axios->>Axios: Add Authorization header<br/>from localStorage
+    Axios->>API: GET /api/activities<br/>Authorization: Bearer {token}
+    API->>Auth: Verify JWT token
+
+    alt Token Valid
+        Auth-->>API: User authenticated
+        API->>DB: Query data
+        DB-->>API: Results
+        API-->>Frontend: 200 OK with data
+    else Token Expired (401)
+        Auth-->>API: 401 Unauthorized
+        API-->>Axios: 401 Error
+
+        Axios->>Axios: Intercept 401 error
+        Axios->>API: POST /api/auth/refresh<br/>{refreshToken}
+        API->>API: Verify refresh token
+        API->>API: Generate new accessToken
+        API-->>Axios: {accessToken: newToken}
+        Axios->>Axios: Update localStorage
+        Axios->>API: Retry original request<br/>with new token
+        API-->>Frontend: 200 OK with data
+    end
+
+    Frontend-->>User: Display page data

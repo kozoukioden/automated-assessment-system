@@ -1,0 +1,89 @@
+sequenceDiagram
+    autonumber
+    title Sequence Diagram 3: Writing/Speaking Submission & AI Feedback Flow
+
+    actor Student
+    participant Frontend as React Frontend
+    participant API as Express.js API
+    participant StudentDB as Student Model
+    participant EvalService as AIEvaluationService
+    participant MistakeService as MistakeDetectionService
+    participant FeedbackService as FeedbackGenerationService
+    participant AIService as GeminiAIService
+    participant Gemma as Gemma 3 4B IT
+    participant DB as MongoDB
+
+    Student->>Frontend: Open Writing/Speaking Activity
+    Frontend->>API: GET /api/activities/:id
+    API-->>Frontend: Activity with prompt
+
+    Frontend-->>Student: Display activity prompt<br/>& instructions
+
+    alt Writing Activity
+        Student->>Frontend: Write essay/text response
+        Student->>Frontend: Click "Submit"
+        Frontend->>API: POST /api/submissions/writing<br/>{activityId, content: {text}}
+    else Speaking Activity
+        Student->>Frontend: Record audio response
+        Student->>Frontend: Click "Submit"
+        Frontend->>API: POST /api/submissions/speaking<br/>{activityId, content: {audioUrl, transcript}}
+    end
+
+    API->>DB: Create Submission (status: "pending")
+
+    Note over API,Gemma: Step 1: AI Evaluation with CEFR Level
+
+    API->>EvalService: evaluateSubmission(submission)
+    EvalService->>StudentDB: findOne({userId})<br/>Get student's CEFR level
+    StudentDB-->>EvalService: {englishLevel: "B1"}
+
+    EvalService->>AIService: evaluateSubmission(content, type, rubric, "B1")
+
+    Note right of AIService: Prompt includes:<br/>- B1 grammar expectations<br/>- B1 vocabulary range<br/>- B1 structure expectations<br/>- Scoring relative to level
+
+    AIService->>Gemma: generateContent(prompt)
+    Gemma-->>AIService: JSON evaluation
+
+    AIService->>AIService: parseEvaluationResponse()<br/>Extract scores & reasoning
+
+    AIService-->>EvalService: {overallScore, grammarScore,<br/>vocabularyScore, structureScore,<br/>clarityScore, reasoning}
+
+    EvalService->>DB: Save Evaluation
+
+    Note over API,Gemma: Step 2: Level-Appropriate Mistake Detection
+
+    API->>MistakeService: detectMistakes(submission)
+    MistakeService->>StudentDB: Get englishLevel
+    MistakeService->>AIService: detectMistakes(content, type, "B1")
+
+    Note right of AIService: For B1: Focus on<br/>tense consistency,<br/>article usage,<br/>connectors
+
+    AIService->>Gemma: generateContent(mistakesPrompt)
+    Gemma-->>AIService: {errors: [...]}
+    AIService-->>MistakeService: Mistakes list
+
+    MistakeService->>DB: Save Mistakes
+
+    Note over API,Gemma: Step 3: Personalized Feedback Generation
+
+    API->>FeedbackService: generateFeedback(submission, eval, mistakes)
+    FeedbackService->>StudentDB: Get englishLevel
+    FeedbackService->>AIService: generateFeedback(eval, mistakes, type, "B1")
+
+    Note right of AIService: B1 Guidance:<br/>Clear language,<br/>intermediate tips,<br/>encourage independence
+
+    AIService->>Gemma: generateContent(feedbackPrompt)
+    Gemma-->>AIService: {feedbackText, strengths,<br/>improvements, recommendations,<br/>nextSteps}
+    AIService-->>FeedbackService: Complete feedback
+
+    FeedbackService->>DB: Save Feedback
+
+    API->>DB: Update Submission (status: "evaluated")
+    API-->>Frontend: {success: true, submissionId}
+
+    Frontend-->>Student: Navigate to Results Page
+
+    Note over Student,Frontend: Student views comprehensive results
+
+    Student->>Frontend: View Results
+    Frontend-->>Student: Display:<br/>📊 Overall Score: 78/100<br/>📝 Grammar: 75 | Vocabulary: 80<br/>🔍 3 mistakes found with corrections<br/>💬 "Good effort! Your use of..."<br/>📈 Next: Focus on past tenses

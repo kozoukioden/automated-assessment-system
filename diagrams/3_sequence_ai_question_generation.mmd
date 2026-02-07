@@ -1,0 +1,48 @@
+sequenceDiagram
+    autonumber
+    title Sequence Diagram 1: AI Question Generation Flow
+
+    actor Teacher
+    participant Frontend as React Frontend<br/>(CreateActivity.jsx)
+    participant API as Express.js API<br/>(activityController)
+    participant AIService as GeminiAIService
+    participant Gemma as Gemma 3 4B IT<br/>(Google AI)
+    participant DB as MongoDB
+
+    Teacher->>Frontend: Select Quiz Type,<br/>Enter Topic, Set CEFR Level (B1)
+    Teacher->>Frontend: Click "Generate Questions with AI"
+
+    Frontend->>API: POST /api/activities/generate-questions<br/>{activityType: "quiz", topic, targetLevel: "B1"}
+
+    API->>API: Validate request<br/>(activityType, topic required)
+
+    API->>AIService: generateQuestions("quiz", "B1", topic, 5)
+
+    AIService->>AIService: buildQuestionsPrompt()<br/>Include CEFR level expectations
+
+    AIService->>Gemma: generateContent(prompt)<br/>with level-specific instructions
+
+    Gemma-->>AIService: JSON Response<br/>{questions: [{questionText, options, correctAnswer}]}
+
+    AIService->>AIService: parseQuestionsResponse()<br/>Clean control chars, parse JSON
+
+    AIService-->>API: questions[] (5 quiz questions)
+
+    API-->>Frontend: 200 OK<br/>{success: true, data: {generated: questions[]}}
+
+    Frontend->>Frontend: replaceQuestions(newQuestions)<br/>Update form with AI questions
+
+    Frontend-->>Teacher: Display 5 generated questions<br/>with options in form
+
+    Teacher->>Frontend: Review & Edit questions
+    Teacher->>Frontend: Click "Save Activity"
+
+    Frontend->>API: POST /api/activities<br/>{title, questions[], activityType: "quiz"}
+
+    API->>DB: Save Activity with questions
+
+    DB-->>API: Activity saved
+
+    API-->>Frontend: 201 Created
+
+    Frontend-->>Teacher: "Activity created successfully!"

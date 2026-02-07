@@ -1,0 +1,184 @@
+classDiagram
+    direction TB
+
+    class User {
+        +String _id
+        +String firstName
+        +String lastName
+        +String email
+        +String password
+        +String role [teacher|student]
+        +Date createdAt
+        +login()
+        +register()
+        +refreshToken()
+    }
+
+    class Student {
+        +String _id
+        +ObjectId userId
+        +String englishLevel [A1|A2|B1|B2|C1|C2]
+        +String studentId
+        +Date enrollmentDate
+        +getLevel()
+        +updateLevel()
+    }
+
+    class Activity {
+        +String _id
+        +String title
+        +String description
+        +String activityType [quiz|writing|speaking]
+        +String prompt
+        +String difficulty [beginner|intermediate|advanced]
+        +Number expectedDuration
+        +ObjectId rubricId
+        +ObjectId teacherId
+        +Boolean isActive
+        +Question[] questions
+        +Date createdAt
+        +create()
+        +update()
+        +delete()
+        +getByTeacher()
+    }
+
+    class Question {
+        +String questionText
+        +String questionType [multiple-choice|true-false|short-answer]
+        +String[] options
+        +String correctAnswer
+        +Number points
+        +String explanation
+        +Boolean aiGenerated
+    }
+
+    class Submission {
+        +String _id
+        +ObjectId studentId
+        +ObjectId activityId
+        +Object content
+        +String status [pending|evaluated]
+        +Date submittedAt
+        +submit()
+        +getByStudent()
+        +getByActivity()
+    }
+
+    class Evaluation {
+        +String _id
+        +ObjectId submissionId
+        +Number overallScore
+        +Number grammarScore
+        +Number vocabularyScore
+        +Number structureScore
+        +Number clarityScore
+        +Number aiConfidence
+        +String reasoning
+        +String aiProvider
+        +String aiModel
+        +Date evaluatedAt
+        +evaluate()
+        +getBySubmission()
+    }
+
+    class Mistake {
+        +String _id
+        +ObjectId submissionId
+        +String errorType [grammar|spelling|vocabulary|punctuation|logic]
+        +String severity [critical|major|minor]
+        +String originalText
+        +String correctedText
+        +String description
+        +String suggestion
+        +Boolean aiGenerated
+        +detect()
+        +getBySubmission()
+    }
+
+    class Feedback {
+        +String _id
+        +ObjectId submissionId
+        +String feedbackText
+        +String[] strengths
+        +String[] improvements
+        +String[] recommendations
+        +String nextSteps
+        +String tone
+        +Boolean aiGenerated
+        +generate()
+        +getBySubmission()
+    }
+
+    class Rubric {
+        +String _id
+        +String name
+        +String type [speaking|writing|quiz]
+        +ObjectId teacherId
+        +Criteria[] criteria
+        +Date createdAt
+        +create()
+        +update()
+        +getByTeacher()
+    }
+
+    class Criteria {
+        +String name
+        +String description
+        +Number weight
+        +Number maxScore
+    }
+
+    class GeminiAIService {
+        -GenerativeModel model
+        +evaluateSubmission(content, contentType, rubric, englishLevel)
+        +detectMistakes(content, contentType, englishLevel)
+        +detectChallenges(submissions)
+        +generateFeedback(evaluation, mistakes, contentType, englishLevel)
+        +generateQuestions(activityType, englishLevel, topic, count)
+        +generateActivityPrompt(activityType, englishLevel, topic)
+        -buildEvaluationPrompt()
+        -buildMistakesPrompt()
+        -buildFeedbackPrompt()
+        -buildQuestionsPrompt()
+        -parseEvaluationResponse()
+        -parseMistakesResponse()
+        -parseFeedbackResponse()
+        -parseQuestionsResponse()
+    }
+
+    class AIEvaluationService {
+        +evaluateSubmission(submission)
+        -getStudentLevel(studentId)
+    }
+
+    class MistakeDetectionService {
+        +detectMistakes(submission)
+        -getStudentLevel(studentId)
+    }
+
+    class FeedbackGenerationService {
+        +generateFeedback(submission, evaluation, mistakes)
+        -getStudentLevel(studentId)
+    }
+
+    %% Relationships
+    User "1" --> "0..1" Student : has profile
+    User "1" --> "*" Activity : creates
+    Activity "1" --> "*" Question : contains
+    Activity "1" --> "*" Submission : receives
+    Activity "*" --> "0..1" Rubric : uses
+    Rubric "1" --> "*" Criteria : contains
+    Student "1" --> "*" Submission : makes
+    Submission "1" --> "0..1" Evaluation : has
+    Submission "1" --> "*" Mistake : has
+    Submission "1" --> "0..1" Feedback : has
+    User "1" --> "*" Rubric : creates
+
+    AIEvaluationService --> GeminiAIService : uses
+    MistakeDetectionService --> GeminiAIService : uses
+    FeedbackGenerationService --> GeminiAIService : uses
+    AIEvaluationService --> Evaluation : creates
+    MistakeDetectionService --> Mistake : creates
+    FeedbackGenerationService --> Feedback : creates
+    GeminiAIService --> Question : generates
